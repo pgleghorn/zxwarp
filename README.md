@@ -46,23 +46,23 @@ See [about](src/templates/about.html) (built to `dist/about.html`) for the full 
 
 ## Games library
 
-The World of Spectrum visitor-voted **Top 50** is stored under `games/top50/` with metadata in `games/catalog.json`.
+The World of Spectrum visitor-voted **Top 100** is stored under `games/top100/` with metadata in `games/catalog.json`.
 
 ```bash
 npm run fetch-games   # refresh from worldofspectrum.net
 npm run build
 ```
 
-Open **Games** (`/games.html`) for a Qaop-style browser: jump by year, or scroll the ranked Top 50, then click to play. Games launch **fullscreen**; press **Esc** to toggle Torinak-style side panels (controls left, snapshot slots right). Snapshots are real save-states kept in IndexedDB per game.
+Open **Games** (`/games.html`) for a Qaop-style browser: jump by year, or scroll the ranked Top 100, then click to play. Games launch **fullscreen**; press **Esc** to toggle Torinak-style side panels (controls left, snapshot slots right). Snapshots are real save-states kept in IndexedDB per game.
 
 ```text
-/#48&g=bomb-jack&l=games/top50/09-bomb-jack.tap.zip
-/#48&panels&g=bomb-jack&l=games/top50/09-bomb-jack.tap.zip
+/#48&g=bomb-jack&l=games/top100/009-bomb-jack.tap.zip
+/#48&panels&g=bomb-jack&l=games/top100/009-bomb-jack.tap.zip
 ```
 
 Keys follow Qaop/JS: `Esc` panels, `F2`/`F3` remember/recall state, `Del` restart, `Insert` games, `Ctrl+O`/`Ctrl+S` when paused. Zoom is UI-only (no `1`/`2`/`3` shortcuts).
 
-Four titles in the Top 50 currently have no public WoS `.pub` mirror (R-Type, Jetpac, Knight Lore, Ghost 'n Goblins) — they remain listed with a World of Spectrum link.
+Some titles have no public WoS `.pub` mirror — they remain listed with a World of Spectrum link.
 
 ## Licence
 

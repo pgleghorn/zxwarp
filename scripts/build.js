@@ -68,7 +68,7 @@ function listLooseGames(catalogSlugs) {
       const full = join(dir, entry);
       const st = statSync(full);
       if (st.isDirectory()) {
-        if (entry === 'top50') continue; // covered by catalog
+        if (entry === 'top50' || entry === 'top100') continue; // covered by catalog
         walk(full);
         continue;
       }
@@ -107,7 +107,7 @@ function renderGamesPage(catalog) {
   });
 
   const yearNav = [
-    '<a href="#top50">Top 50</a>',
+    '<a href="#top100">Top 100</a>',
     ...years.map((y) => `<a href="#y${y}">${escapeHtml(String(y))}</a>`),
   ].join('\n');
 
@@ -221,7 +221,7 @@ function main() {
 
   const totalFiles = page.count + loose.length;
   console.log(
-    `Built dist/ (${page.count} top-50 files, ${loose.length} other local, ${totalFiles} playable)`
+    `Built dist/ (${page.count} top-100 files, ${loose.length} other local, ${totalFiles} playable)`
   );
 }
 

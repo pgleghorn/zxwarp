@@ -66,6 +66,16 @@
         >Auto-load</button>
       </div>
 
+      <label class="field">
+        <span class="field-label">Gamepad</span>
+        <select id="gamepad-map" title="How a USB DualShock 4 / standard gamepad maps to Spectrum controls">
+          <option value="cursor">Cursor keys + 0</option>
+          <option value="sinclair">Sinclair (6–0)</option>
+          <option value="qaop">QAOP + Space</option>
+        </select>
+      </label>
+      <p class="gamepad-status" id="gamepad-status">No gamepad</p>
+
       <p class="now-playing" id="now-playing"></p>
       <p class="status" id="status" aria-live="polite"></p>
 
@@ -86,6 +96,7 @@
         <div><dt>Alt</dt><dd>Symbol Shift</dd></div>
         <div><dt>Tab</dt><dd>Extended mode</dd></div>
         <div><dt>Home</dt><dd>Edit</dd></div>
+        <div><dt>Pad</dt><dd>USB gamepad (PS4)</dd></div>
         <div><dt>Del</dt><dd>Reset, restart</dd></div>
         <div><dt>F1</dt><dd>About</dd></div>
         <div><dt>F2</dt><dd>Remember state</dd></div>

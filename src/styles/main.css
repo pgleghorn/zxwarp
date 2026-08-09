@@ -171,6 +171,18 @@ body.panels-open .side {
   padding: 0.35rem 0.4rem;
 }
 
+.gamepad-status {
+  margin: -0.35rem 0 0.75rem;
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--muted);
+  min-height: 1.1em;
+}
+
+.gamepad-status.on {
+  color: var(--green);
+}
+
 .now-playing {
   margin: 0.75rem 0 0.2rem;
   color: #ffc4b4;

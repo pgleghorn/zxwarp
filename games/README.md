@@ -1,6 +1,6 @@
 # Games
 
-## Top 50 (`top50/`)
+## Top 100 (`top100/`)
 
 Visitor-voted classics from [World of Spectrum – Best Games](https://worldofspectrum.net/archive/best-games/), fetched with:
 
@@ -11,7 +11,7 @@ npm run fetch-games
 Metadata lives in `catalog.json`. The static site’s Games page lists them by **rank** and by **year** (Qaop-style). Click a title to launch the emulator:
 
 ```text
-./#48&g=bomb-jack&l=games/top50/09-bomb-jack.tap.zip
+./#48&g=bomb-jack&l=games/top100/009-bomb-jack.tap.zip
 ```
 
 ## Licence note
@@ -20,4 +20,4 @@ Tape/snapshot files remain copyright of their original publishers. They are mirr
 
 ## Drop your own files
 
-Any extra `.tap` / `.tzx` / `.z80` / `.sna` / `.szx` / `.zip` outside `top50/` is copied into the build and listed under “Other local files”.
+Any extra `.tap` / `.tzx` / `.z80` / `.sna` / `.szx` / `.zip` outside `top100/` is copied into the build and listed under “Other local files”.

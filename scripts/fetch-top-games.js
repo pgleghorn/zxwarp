@@ -1,5 +1,5 @@
 /**
- * Fetch the World of Spectrum visitor-voted top 50 and store playable zips.
+ * Fetch the World of Spectrum visitor-voted top 100 and store playable zips.
  * Source: https://worldofspectrum.net/archive/best-games/
  */
 import {
@@ -16,9 +16,10 @@ import { Readable } from 'node:stream';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
-const outDir = join(root, 'games', 'top50');
+const outDir = join(root, 'games', 'top100');
+const legacyDir = join(root, 'games', 'top50');
 const catalogPath = join(root, 'games', 'catalog.json');
-const LIMIT = Number(process.env.TOP_GAMES || 50);
+const LIMIT = Number(process.env.TOP_GAMES || 100);
 const BEST_URL = 'https://worldofspectrum.net/archive/best-games/';
 const UA = 'zxwrap/0.1 (personal archive mirror; +https://github.com/local/zxwrap)';
 
@@ -224,9 +225,22 @@ async function main() {
       for (const candidate of candidates) {
         const extMatch = candidate.match(/\.(tap|tzx|z80|sna|szx)\.zip$/i);
         kind = (extMatch?.[1] || 'zip').toLowerCase();
-        filename = `${String(game.rank).padStart(2, '0')}-${game.slug}.${kind}.zip`;
+        filename = `${String(game.rank).padStart(3, '0')}-${game.slug}.${kind}.zip`;
         dest = join(outDir, filename);
+        const legacyNames = [
+          join(outDir, `${String(game.rank).padStart(2, '0')}-${game.slug}.${kind}.zip`),
+          join(legacyDir, `${String(game.rank).padStart(2, '0')}-${game.slug}.${kind}.zip`),
+          join(legacyDir, filename),
+        ];
         if (existsSync(dest)) {
+          downloadUrl = candidate;
+          fromCache = true;
+          break;
+        }
+        const legacyHit = legacyNames.find((p) => existsSync(p));
+        if (legacyHit) {
+          mkdirSync(outDir, { recursive: true });
+          renameSync(legacyHit, dest);
           downloadUrl = candidate;
           fromCache = true;
           break;
@@ -254,7 +268,7 @@ async function main() {
         continue;
       }
 
-      const relPath = `games/top50/${filename}`;
+      const relPath = `games/top100/${filename}`;
       console.log(`${fromCache ? 'cached' : 'OK'} ← ${kind.toUpperCase()}`);
 
       const machine = /128/i.test(filename)

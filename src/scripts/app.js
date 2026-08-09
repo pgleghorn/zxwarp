@@ -534,9 +534,27 @@
     CAPS: { row: 0, mask: 0x01 },
     SYM: { row: 7, mask: 0x02 },
     ONE: { row: 3, mask: 0x01 },
+    TWO: { row: 3, mask: 0x02 },
+    THREE: { row: 3, mask: 0x04 },
+    FOUR: { row: 3, mask: 0x08 },
+    FIVE: { row: 3, mask: 0x10 },
+    SIX: { row: 4, mask: 0x10 },
+    SEVEN: { row: 4, mask: 0x08 },
+    EIGHT: { row: 4, mask: 0x04 },
+    NINE: { row: 4, mask: 0x02 },
+    ZERO: { row: 4, mask: 0x01 },
+    Q: { row: 2, mask: 0x01 },
+    A: { row: 1, mask: 0x01 },
+    O: { row: 5, mask: 0x02 },
+    P: { row: 5, mask: 0x01 },
+    M: { row: 7, mask: 0x04 },
+    SPACE: { row: 7, mask: 0x01 },
+    ENTER: { row: 6, mask: 0x01 },
   };
 
   const heldExtra = { alt: false, tab: false, home: false, shift: false };
+  const GAMEPAD_STORE_KEY = 'zxwrap-gamepad-map';
+  const GAMEPAD_DEADZONE = 0.45;
 
   function emuKey(spec, down) {
     const worker = window.__zxwrapWorker;
@@ -634,6 +652,218 @@
       }
       heldExtra.alt = heldExtra.tab = heldExtra.home = heldExtra.shift = false;
     });
+  }
+
+  /* ——— USB / Bluetooth gamepad (PS4 DualShock via Gamepad API) ——— */
+
+  function gamepadMapMode() {
+    try {
+      const v = localStorage.getItem(GAMEPAD_STORE_KEY);
+      if (v === 'sinclair' || v === 'qaop' || v === 'cursor') return v;
+    } catch {
+      /* ignore */
+    }
+    return 'cursor';
+  }
+
+  function setGamepadMapMode(mode) {
+    const next = mode === 'sinclair' || mode === 'qaop' ? mode : 'cursor';
+    try {
+      localStorage.setItem(GAMEPAD_STORE_KEY, next);
+    } catch {
+      /* ignore */
+    }
+    const sel = document.getElementById('gamepad-map');
+    if (sel) sel.value = next;
+    return next;
+  }
+
+  function updateGamepadStatus(pad) {
+    const el = document.getElementById('gamepad-status');
+    if (!el) return;
+    if (!pad) {
+      el.textContent = 'No gamepad';
+      el.classList.remove('on');
+      return;
+    }
+    const label = pad.id ? pad.id.replace(/\s+/g, ' ').slice(0, 42) : 'Gamepad';
+    el.textContent = `Pad: ${label}`;
+    el.classList.add('on');
+  }
+
+  function pickGamepad() {
+    if (!navigator.getGamepads) return null;
+    const pads = navigator.getGamepads();
+    for (let i = 0; i < pads.length; i++) {
+      const p = pads[i];
+      if (p && p.connected) return p;
+    }
+    return null;
+  }
+
+  function axisActive(v) {
+    return Math.abs(v) >= GAMEPAD_DEADZONE;
+  }
+
+  function readPadDirections(pad) {
+    const buttons = pad.buttons || [];
+    const axes = pad.axes || [];
+    let up = !!(buttons[12] && buttons[12].pressed);
+    let down = !!(buttons[13] && buttons[13].pressed);
+    let left = !!(buttons[14] && buttons[14].pressed);
+    let right = !!(buttons[15] && buttons[15].pressed);
+    if (axisActive(axes[0])) {
+      if (axes[0] < 0) left = true;
+      if (axes[0] > 0) right = true;
+    }
+    if (axisActive(axes[1])) {
+      if (axes[1] < 0) up = true;
+      if (axes[1] > 0) down = true;
+    }
+    // Avoid opposite directions cancelling oddly — prefer latest axis if both
+    if (up && down) {
+      up = axes[1] < 0;
+      down = axes[1] > 0;
+    }
+    if (left && right) {
+      left = axes[0] < 0;
+      right = axes[0] > 0;
+    }
+    return { up, down, left, right };
+  }
+
+  function gamepadActionMap(mode) {
+    // Cross=fire, Circle=Enter (menus). Directions per Spectrum joystick scheme.
+    if (mode === 'sinclair') {
+      return {
+        // Interface 2 / Sinclair port 1: 6 left, 7 right, 8 down, 9 up, 0 fire
+        up: [ZX.NINE],
+        down: [ZX.EIGHT],
+        left: [ZX.SIX],
+        right: [ZX.SEVEN],
+        fire: [ZX.ZERO],
+        enter: [ZX.ENTER],
+      };
+    }
+    if (mode === 'qaop') {
+      return {
+        up: [ZX.Q],
+        down: [ZX.A],
+        left: [ZX.O],
+        right: [ZX.P],
+        fire: [ZX.SPACE],
+        enter: [ZX.ENTER],
+      };
+    }
+    // Cursor joystick: Caps+5/6/7/8 + 0 fire (same as arrow keys in JSSpeccy)
+    return {
+      up: [ZX.CAPS, ZX.SEVEN],
+      down: [ZX.CAPS, ZX.SIX],
+      left: [ZX.CAPS, ZX.FIVE],
+      right: [ZX.CAPS, ZX.EIGHT],
+      fire: [ZX.ZERO],
+      enter: [ZX.ENTER],
+    };
+  }
+
+  function bindGamepad() {
+    /** @type {Set<string>} */
+    let heldKeys = new Set();
+    let raf = 0;
+    let lastPadId = null;
+
+    function keyId(spec) {
+      return `${spec.row}:${spec.mask}`;
+    }
+
+    function keyFromId(id) {
+      const [row, mask] = id.split(':').map(Number);
+      return { row, mask };
+    }
+
+    const select = document.getElementById('gamepad-map');
+    if (select) {
+      select.value = gamepadMapMode();
+      select.addEventListener('change', () => {
+        setGamepadMapMode(select.value);
+        for (const key of heldKeys) emuKey(keyFromId(key), false);
+        heldKeys = new Set();
+        toast(`Gamepad → ${select.options[select.selectedIndex].text}`);
+      });
+    }
+
+    function applyKeySet(desired) {
+      for (const id of heldKeys) {
+        if (!desired.has(id)) emuKey(keyFromId(id), false);
+      }
+      for (const id of desired) {
+        if (!heldKeys.has(id)) emuKey(keyFromId(id), true);
+      }
+      heldKeys = desired;
+    }
+
+    function releaseAll() {
+      applyKeySet(new Set());
+    }
+
+    function tick() {
+      raf = requestAnimationFrame(tick);
+      if (paused || document.hidden) {
+        if (heldKeys.size) releaseAll();
+        return;
+      }
+
+      const pad = pickGamepad();
+      if (!pad) {
+        if (lastPadId) {
+          releaseAll();
+          lastPadId = null;
+          updateGamepadStatus(null);
+        }
+        return;
+      }
+
+      if (pad.id !== lastPadId) {
+        if (lastPadId) releaseAll();
+        lastPadId = pad.id;
+        updateGamepadStatus(pad);
+      }
+
+      const mode = gamepadMapMode();
+      const map = gamepadActionMap(mode);
+      const dir = readPadDirections(pad);
+      const buttons = pad.buttons || [];
+      const fire = !!(buttons[0] && buttons[0].pressed) || !!(buttons[7] && buttons[7].pressed); // Cross / R2
+      const enter = !!(buttons[1] && buttons[1].pressed); // Circle
+
+      const desired = new Set();
+      const add = (keys, on) => {
+        if (!on) return;
+        for (const k of keys) desired.add(keyId(k));
+      };
+      add(map.up, dir.up);
+      add(map.down, dir.down);
+      add(map.left, dir.left);
+      add(map.right, dir.right);
+      add(map.fire, fire);
+      add(map.enter, enter);
+      applyKeySet(desired);
+    }
+
+    window.addEventListener('gamepadconnected', (e) => {
+      updateGamepadStatus(e.gamepad);
+      toast('Gamepad connected');
+    });
+    window.addEventListener('gamepaddisconnected', () => {
+      releaseAll();
+      lastPadId = null;
+      updateGamepadStatus(pickGamepad());
+      toast('Gamepad disconnected');
+    });
+
+    updateGamepadStatus(pickGamepad());
+    raf = requestAnimationFrame(tick);
+    window.addEventListener('beforeunload', () => cancelAnimationFrame(raf));
   }
 
   async function recallLatestSnapshot() {
@@ -1189,6 +1419,7 @@
     syncChrome();
     bindUi();
     bindSpectrumKeys();
+    bindGamepad();
     await renderSnapshots();
     refreshPokeMatch();
 
