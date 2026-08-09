@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>zxwrap – ZX Spectrum</title>
+  <link rel="icon" href="./favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/main.css">
+  <script>
+    /* Capture the JSSpeccy worker so we can request save-state snapshots. */
+    (function () {
+      var Orig = window.Worker;
+      window.Worker = function (url, opts) {
+        var w = new Orig(url, opts);
+        if (String(url).indexOf('jsspeccy-worker') !== -1) {
+          window.__zxwrapWorker = w;
+        }
+        return w;
+      };
+      window.Worker.prototype = Orig.prototype;
+    })();
+  </script>
+  <script src="./jsspeccy/jsspeccy.js"></script>
+</head>
+<body class="app play">
+  <div class="play-layout" id="play-layout">
+    <aside class="side side-left" id="side-left" aria-label="Emulator controls">
+      <div class="brand-block">
+        <h1>zx<span>wrap</span></h1>
+        <p class="tagline">ZX Spectrum emulator</p>
+        <nav class="side-nav">
+          <a href="./about.html">about</a>
+          <span>·</span>
+          <a href="./games.html">games</a>
+        </nav>
+      </div>
+
+      <div class="btn-row">
+        <button type="button" id="btn-pause">Pause</button>
+        <button type="button" id="btn-restart">Restart</button>
+      </div>
+      <div class="btn-row">
+        <button type="button" id="btn-open">Open</button>
+        <button type="button" id="btn-games">Games</button>
+        <button type="button" id="btn-save" title="Download a .z80 snapshot of the current state">Save</button>
+      </div>
+
+      <label class="field">
+        <span class="field-label">Machine</span>
+        <select id="machine-select">
+          <option value="48">Spectrum 48K</option>
+          <option value="128">Spectrum 128K</option>
+          <option value="5">Pentagon 128</option>
+        </select>
+      </label>
+
+      <div class="btn-row toggles">
+        <button
+          type="button"
+          id="btn-autoload"
+          aria-pressed="true"
+          title="When on, opening a TAP/TZX automatically types LOAD &quot;&quot; and starts the tape. When off, you load tapes yourself from BASIC."
+        >Auto-load</button>
+      </div>
+
+      <p class="now-playing" id="now-playing"></p>
+      <p class="status" id="status" aria-live="polite"></p>
+
+      <dl class="keys">
+        <div><dt>Esc</dt><dd>Menu panels</dd></div>
+        <div><dt>Shift</dt><dd>Caps Shift</dd></div>
+        <div><dt>Alt</dt><dd>Symbol Shift</dd></div>
+        <div><dt>Tab</dt><dd>Extended mode</dd></div>
+        <div><dt>Home</dt><dd>Edit</dd></div>
+        <div><dt>Del</dt><dd>Reset, restart</dd></div>
+        <div><dt>F1</dt><dd>About</dd></div>
+        <div><dt>F2</dt><dd>Remember state</dd></div>
+        <div><dt>F3</dt><dd>Recall state</dd></div>
+        <div><dt>Pause</dt><dd>Pause</dd></div>
+        <div><dt>Insert</dt><dd>Games…</dd></div>
+        <div><dt>Ctrl O</dt><dd>Open (when paused)</dd></div>
+        <div><dt>Ctrl S</dt><dd>Remember state (when paused)</dd></div>
+      </dl>
+
+      <div class="btn-row">
+        <button type="button" id="btn-share">Share link…</button>
+      </div>
+
+      <section class="inline-panel" id="panel-share" hidden>
+        <input id="share-input" type="text" readonly>
+        <button type="button" id="btn-copy-share">Copy</button>
+        <p class="share-out" id="share-note"></p>
+      </section>
+
+      <p class="credit">
+        Powered by <a href="https://github.com/gasman/jsspeccy3" target="_blank" rel="noopener">JSSpeccy 3</a>
+      </p>
+    </aside>
+
+    <main class="screen-stage">
+      <div class="crt" id="crt">
+        <div id="jsspeccy"></div>
+      </div>
+      <p class="esc-hint" id="esc-hint"><kbd>Esc</kbd> controls</p>
+    </main>
+
+    <aside class="side side-right" id="side-right" aria-label="Snapshots">
+      <h2>Snapshots</h2>
+      <button type="button" id="btn-snap-create" class="create">Create</button>
+      <ul class="snap-list" id="snap-list"></ul>
+      <p class="snap-empty" id="snap-empty">No snapshots yet for this game.</p>
+      <p class="snap-note">Saved in this browser (IndexedDB). Slots are per game.</p>
+    </aside>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="./assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "zxwrap",
+  "version": "0.1.0",
+  "description": "Static ZX Spectrum web UI powered by JSSpeccy 3",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fetch-jsspeccy": "node scripts/fetch-jsspeccy.js && node scripts/patch-jsspeccy.js",
+    "fetch-games": "node scripts/fetch-top-games.js",
+    "patch-jsspeccy": "node scripts/patch-jsspeccy.js",
+    "build": "node scripts/build.js",
+    "serve": "node scripts/serve.js",
+    "start": "npm run build && npm run serve"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "GPL-3.0-or-later"
+}

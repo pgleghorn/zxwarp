@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About – zxwrap</title>
+  <link rel="icon" href="./favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/main.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <h1>zx<span>wrap</span></h1>
+      <div class="tag">About</div>
+    </div>
+    <nav class="nav">
+      <a href="./">Run</a>
+      <a href="./games.html">Games</a>
+      <a href="./about.html" aria-current="page">About</a>
+    </nav>
+  </header>
+
+  <main class="doc">
+    <h1>zx<span>wrap</span> – ZX Spectrum emulator</h1>
+    <p class="lead">
+      A small static web UI around
+      <a href="https://github.com/gasman/jsspeccy3">JSSpeccy 3</a>,
+      aiming for the same straightforward controls and URL-driven workflow as
+      <a href="https://torinak.com/qaop/about">Qaop/JS</a>.
+    </p>
+
+    <h2>Keys</h2>
+    <table>
+      <tbody>
+            <tr><th><kbd>Esc</kbd></th><td>Menu panels</td></tr>
+        <tr><th><kbd>Del</kbd></th><td>Reset, restart</td></tr>
+        <tr><th><kbd>F1</kbd></th><td>About</td></tr>
+        <tr><th><kbd>F2</kbd></th><td>Remember state</td></tr>
+        <tr><th><kbd>F3</kbd></th><td>Recall state</td></tr>
+        <tr><th><kbd>Pause</kbd></th><td>Pause</td></tr>
+        <tr><th><kbd>Insert</kbd></th><td>Games page</td></tr>
+        <tr><th><kbd>Ctrl</kbd>+<kbd>O</kbd></th><td>Open file (when paused)</td></tr>
+        <tr><th><kbd>Ctrl</kbd>+<kbd>S</kbd></th><td>Save state (when paused)</td></tr>
+        <tr><th>Host keys</th><td>Passed through to the Spectrum by JSSpeccy (Shift ≈ Caps Shift, etc.)</td></tr>
+      </tbody>
+    </table>
+
+    <h2>URL parameters</h2>
+    <p>Append a hash to the run page. Parameters may be concatenated.</p>
+    <table>
+      <tbody>
+        <tr><th><code>#l=<em>URL</em></code></th><td>Load a program (TAP, TZX, Z80, SNA, SZX, ZIP)</td></tr>
+        <tr><th><code>#g=<em>slug</em></code></th><td>Select a catalog game (from the Top 50 list)</td></tr>
+        <tr><th><code>#48</code></th><td>Spectrum 48K</td></tr>
+        <tr><th><code>#128</code></th><td>Spectrum 128K</td></tr>
+        <tr><th><code>#pentagon</code></th><td>Pentagon 128</td></tr>
+        <tr><th><code>#zoom=1|2|3</code></th><td>Display scale</td></tr>
+        <tr><th><code>#autoload</code></th><td>Auto-load tapes (default on)</td></tr>
+        <tr><th><code>#!autoload</code></th><td>Disable auto-load tapes</td></tr>
+        <tr><th><code>#usr0</code></th><td>Use <code>usr0</code> tape auto-load mode (128K / Pentagon)</td></tr>
+        <tr><th><code>#sandbox</code></th><td>Hide open-file affordances (showcase mode)</td></tr>
+        <tr><th><code>#panels</code></th><td>Start with side panels open (default: fullscreen when loading a game)</td></tr>
+      </tbody>
+    </table>
+
+    <p>
+      Example:
+      <code><a href="./index.html#48&amp;zoom=2&amp;g=bomb-jack&amp;l=games/top50/09-bomb-jack.tap.zip">./index.html#48&amp;g=bomb-jack&amp;l=games/top50/09-bomb-jack.tap.zip</a></code>
+    </p>
+    <p>
+      Remote URLs must be CORS-enabled. Files placed in this project’s
+      <code>games/</code> folder are copied into the static build and need no CORS.
+    </p>
+
+    <h2>Supported files</h2>
+    <table>
+      <tbody>
+        <tr><th>Snapshots</th><td>SZX, Z80, SNA</td></tr>
+        <tr><th>Tapes</th><td>TZX, TAP (via traps / real-time loading in JSSpeccy)</td></tr>
+        <tr><th>Archives</th><td>ZIP containing any of the above</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Build</h2>
+    <pre><code>npm start          # build + serve
+npm run build      # write static site to dist/
+npm run serve      # serve dist/ (wasm MIME configured)</code></pre>
+
+    <h2>Credits &amp; licence</h2>
+    <p>
+      Emulation by Matt Westcott —
+      <a href="https://github.com/gasman/jsspeccy3">JSSpeccy 3</a>
+      (GPL-3.0). Original ZX Spectrum ROM © Amstrad PLC; Amstrad have kindly
+      given permission for redistribution of their copyrighted material but retain that copyright.
+    </p>
+    <p>
+      zxwrap itself is GPL-3.0-or-later because it redistributes JSSpeccy.
+      UI convenience patterns inspired by Jan Bobrowski’s
+      <a href="https://torinak.com/qaop/about">Qaop/JS</a>.
+    </p>
+  </main>
+</body>
+</html>
