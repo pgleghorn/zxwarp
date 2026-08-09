@@ -14,11 +14,20 @@
   const snapListEl = document.getElementById('snap-list');
   const snapEmptyEl = document.getElementById('snap-empty');
   const pauseBtn = document.getElementById('btn-pause');
+  const pokePanelEl = document.getElementById('poke-panel');
+  const pokeListEl = document.getElementById('poke-list');
+  const pokeMatchEl = document.getElementById('poke-match');
+  const pokeEmptyEl = document.getElementById('poke-empty');
 
   let emu = null;
   let toastTimer = null;
   let catalog = null;
   let paused = false;
+  let pokeCatalog = null;
+  let pokeCatalogPromise = null;
+  let pokeMatch = null;
+  /** @type {Record<string, { previous: number }[]>} */
+  let pokeUndo = {};
 
   const state = {
     machine: 48,
@@ -232,9 +241,13 @@
   function restart() {
     if (!emu) return;
     setPaused(false);
+    pokeUndo = {};
     if (state.openUrl) {
       emu.openUrl(state.openUrl);
       toast('Restarting…');
+      setTimeout(() => {
+        applyEnabledPokes({ quiet: true }).catch(() => {});
+      }, 2500);
     } else if (typeof emu.reset === 'function') {
       emu.reset();
       toast('Reset');
@@ -678,6 +691,358 @@
     return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
   }
 
+  /* ——— Tipshop pokes ——— */
+
+  const POKE_STORE_KEY = 'zxwrap-poke-selection';
+
+  function normalizeTitle(s) {
+    return String(s || '')
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/&/g, ' and ')
+      .replace(/^the\s+/, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim()
+      .replace(/\s+/g, ' ');
+  }
+
+  function titleTokens(norm) {
+    return norm.split(' ').filter((t) => t.length > 1);
+  }
+
+  function loadPokeSelections() {
+    try {
+      return JSON.parse(localStorage.getItem(POKE_STORE_KEY) || '{}') || {};
+    } catch {
+      return {};
+    }
+  }
+
+  function savePokeSelections(all) {
+    try {
+      localStorage.setItem(POKE_STORE_KEY, JSON.stringify(all));
+    } catch (err) {
+      console.warn('Could not persist poke selections', err);
+    }
+  }
+
+  function pokeSelectionKey() {
+    return gameKey();
+  }
+
+  function getEnabledPokes() {
+    const all = loadPokeSelections();
+    const entry = all[pokeSelectionKey()];
+    if (!entry || !pokeMatch || entry.pokeId !== pokeMatch.id) return {};
+    return entry.enabled || {};
+  }
+
+  function setEnabledPoke(trainerIndex, enabled, userValue) {
+    const all = loadPokeSelections();
+    const key = pokeSelectionKey();
+    const prev = all[key] && all[key].pokeId === pokeMatch?.id ? all[key] : { pokeId: pokeMatch?.id, enabled: {} };
+    const enabledMap = { ...(prev.enabled || {}) };
+    if (enabled) {
+      enabledMap[String(trainerIndex)] =
+        userValue != null && Number.isFinite(Number(userValue)) ? Number(userValue) : true;
+    } else {
+      delete enabledMap[String(trainerIndex)];
+    }
+    all[key] = { pokeId: pokeMatch?.id, enabled: enabledMap };
+    savePokeSelections(all);
+  }
+
+  async function ensurePokeCatalog() {
+    if (pokeCatalog) return pokeCatalog;
+    if (pokeCatalogPromise) return pokeCatalogPromise;
+    pokeCatalogPromise = fetch('./games/pokes.json', { cache: 'force-cache' })
+      .then((res) => {
+        if (!res.ok) throw new Error(`pokes.json ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        pokeCatalog = data;
+        return data;
+      })
+      .catch((err) => {
+        console.warn(err);
+        pokeCatalogPromise = null;
+        return null;
+      });
+    return pokeCatalogPromise;
+  }
+
+  function scorePokeGame(game, queryNorm, queryTokens, year, publisherNorm) {
+    let score = 0;
+    if (game.norm === queryNorm) score += 120;
+    else if (game.norm.startsWith(queryNorm) || queryNorm.startsWith(game.norm)) score += 70;
+    else if (game.norm.includes(queryNorm) || queryNorm.includes(game.norm)) score += 45;
+
+    const gTokens = titleTokens(game.norm);
+    if (queryTokens.length && gTokens.length) {
+      let hit = 0;
+      for (const t of queryTokens) if (gTokens.includes(t)) hit += 1;
+      score += (hit / Math.max(queryTokens.length, gTokens.length)) * 50;
+      // Prefer similar token counts (avoid "Manic Miner" matching "Manic Miner Turbo …")
+      score -= Math.abs(gTokens.length - queryTokens.length) * 4;
+    }
+
+    if (year && game.year && Number(game.year) === Number(year)) score += 18;
+    if (publisherNorm && game.publisher && normalizeTitle(game.publisher) === publisherNorm) score += 12;
+
+    // Prefer plain editions over hacks/demos when titles are otherwise close
+    if (game.suffix) score -= 8;
+    return score;
+  }
+
+  function findBestPokeMatch(title, meta = {}) {
+    if (!pokeCatalog?.games?.length || !title) return null;
+    const queryNorm = normalizeTitle(title);
+    if (!queryNorm) return null;
+    const queryTokens = titleTokens(queryNorm);
+    const publisherNorm = normalizeTitle(meta.publisher || '');
+    const year = meta.year || null;
+
+    let best = null;
+    let bestScore = 0;
+    for (const game of pokeCatalog.games) {
+      const score = scorePokeGame(game, queryNorm, queryTokens, year, publisherNorm);
+      if (score > bestScore) {
+        bestScore = score;
+        best = game;
+      }
+    }
+
+    // Require a reasonable match; exact-ish titles clear easily
+    if (!best || bestScore < 55) return null;
+    return { game: best, score: bestScore };
+  }
+
+  function workerRequest(message, payload = {}, resultMessage, timeoutMs = 3000) {
+    const worker = window.__zxwrapWorker;
+    if (!worker) return Promise.reject(new Error('Emulator worker not ready'));
+    return new Promise((resolve, reject) => {
+      const id = `poke-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const timer = setTimeout(() => {
+        worker.removeEventListener('message', onMsg);
+        reject(new Error(`${message} timed out`));
+      }, timeoutMs);
+      function onMsg(e) {
+        if (!e.data || e.data.message !== resultMessage || e.data.id !== id) return;
+        clearTimeout(timer);
+        worker.removeEventListener('message', onMsg);
+        resolve(e.data);
+      }
+      worker.addEventListener('message', onMsg);
+      worker.postMessage({ message, id, ...payload });
+    });
+  }
+
+  async function peekMemory(bank, address) {
+    const res = await workerRequest('peekMemory', { bank, address }, 'peekMemoryResult');
+    return res.value & 255;
+  }
+
+  async function pokeMemory(bank, address, value) {
+    const res = await workerRequest('pokeMemory', { bank, address, value }, 'pokeMemoryResult');
+    return res.previous & 255;
+  }
+
+  function trainerValue(trainer, enabledEntry) {
+    // enabledEntry may be true or a user-chosen byte for value=256 pokes
+    const needsUser = trainer.pokes.some((p) => p.value === 256);
+    if (!needsUser) return null;
+    if (typeof enabledEntry === 'number' && enabledEntry >= 0 && enabledEntry <= 255) return enabledEntry;
+    return 255;
+  }
+
+  async function applyTrainer(trainerIndex, { enable, userValue } = { enable: true }) {
+    if (!pokeMatch) return;
+    const trainer = pokeMatch.trainers[trainerIndex];
+    if (!trainer) return;
+    const key = String(trainerIndex);
+
+    if (!enable) {
+      const undo = pokeUndo[key];
+      if (undo) {
+        for (const step of undo) {
+          await pokeMemory(step.bank, step.address, step.previous);
+        }
+        delete pokeUndo[key];
+      } else {
+        for (const p of trainer.pokes) {
+          if (p.original) await pokeMemory(p.bank, p.address, p.original & 255);
+        }
+      }
+      return;
+    }
+
+    const undo = [];
+    for (const p of trainer.pokes) {
+      const val = p.value === 256 ? (userValue ?? 255) & 255 : p.value & 255;
+      const previous = await pokeMemory(p.bank, p.address, val);
+      undo.push({ bank: p.bank, address: p.address, previous });
+    }
+    pokeUndo[key] = undo;
+  }
+
+  async function applyEnabledPokes({ quiet } = {}) {
+    if (!pokeMatch) return;
+    const enabled = getEnabledPokes();
+    const indexes = Object.keys(enabled);
+    if (!indexes.length) {
+      if (!quiet) toast('No pokes selected');
+      return;
+    }
+    let n = 0;
+    for (const idx of indexes) {
+      const trainer = pokeMatch.trainers[Number(idx)];
+      if (!trainer) continue;
+      await applyTrainer(Number(idx), {
+        enable: true,
+        userValue: trainerValue(trainer, enabled[idx]),
+      });
+      n += 1;
+    }
+    if (!quiet) toast(`Applied ${n} poke${n === 1 ? '' : 's'}`);
+  }
+
+  function renderPokePanel() {
+    if (!pokePanelEl || !pokeListEl) return;
+
+    if (!state.gameTitle && !state.gameSlug && !state.openUrl) {
+      pokePanelEl.hidden = true;
+      return;
+    }
+
+    pokePanelEl.hidden = false;
+
+    if (!pokeMatch) {
+      pokeListEl.innerHTML = '';
+      if (pokeMatchEl) pokeMatchEl.textContent = 'Looking up Tipshop pokes…';
+      if (pokeEmptyEl) pokeEmptyEl.hidden = true;
+      return;
+    }
+
+    const enabled = getEnabledPokes();
+    if (pokeMatchEl) {
+      const meta = [pokeMatch.year, pokeMatch.publisher].filter(Boolean).join(' · ');
+      pokeMatchEl.textContent = meta
+        ? `Matched: ${pokeMatch.title} (${meta})`
+        : `Matched: ${pokeMatch.title}`;
+    }
+    if (pokeEmptyEl) pokeEmptyEl.hidden = pokeMatch.trainers.length > 0;
+
+    pokeListEl.innerHTML = '';
+    pokeMatch.trainers.forEach((trainer, index) => {
+      const li = document.createElement('li');
+      const id = `poke-${index}`;
+      const needsUser = trainer.pokes.some((p) => p.value === 256);
+      const isOn = enabled[String(index)] != null && enabled[String(index)] !== false;
+      const userVal = trainerValue(trainer, enabled[String(index)]);
+
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.id = id;
+      cb.checked = !!isOn;
+      cb.dataset.pokeIndex = String(index);
+
+      const label = document.createElement('label');
+      label.htmlFor = id;
+      label.textContent = trainer.name;
+
+      const num = document.createElement('input');
+      num.type = 'number';
+      num.min = '0';
+      num.max = '255';
+      num.value = String(userVal ?? 255);
+      num.hidden = !needsUser;
+      num.dataset.pokeIndex = String(index);
+      num.title = 'Value for this poke (0–255)';
+
+      li.appendChild(cb);
+      li.appendChild(label);
+      li.appendChild(num);
+      pokeListEl.appendChild(li);
+    });
+  }
+
+  async function refreshPokeMatch() {
+    await ensurePokeCatalog();
+    pokeUndo = {};
+    pokeMatch = null;
+
+    if (!pokeCatalog) {
+      if (pokePanelEl) pokePanelEl.hidden = true;
+      return;
+    }
+
+    const catalogGame = findCatalogGame({ slug: state.gameSlug, path: state.openUrl });
+    const title = state.gameTitle || catalogGame?.title;
+    const hit = findBestPokeMatch(title, {
+      year: catalogGame?.year,
+      publisher: catalogGame?.publisher,
+    });
+    pokeMatch = hit?.game || null;
+    renderPokePanel();
+
+    // Re-apply previously selected pokes for this game (best-effort once running)
+    const enabled = getEnabledPokes();
+    if (pokeMatch && Object.keys(enabled).length) {
+      // Delay so tape auto-load can finish putting game code in RAM
+      setTimeout(() => {
+        applyEnabledPokes({ quiet: true }).catch(() => {});
+      }, 2500);
+    }
+  }
+
+  function bindPokeUi() {
+    document.getElementById('btn-poke-apply')?.addEventListener('click', () => {
+      applyEnabledPokes().catch((err) => {
+        console.error(err);
+        toast('Could not apply pokes');
+      });
+    });
+
+    pokeListEl?.addEventListener('change', async (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLInputElement)) return;
+      const index = Number(t.dataset.pokeIndex);
+      if (!Number.isFinite(index) || !pokeMatch) return;
+
+      try {
+        if (t.type === 'checkbox') {
+          const row = t.closest('li');
+          const num = row?.querySelector('input[type="number"]');
+          const needsUser = pokeMatch.trainers[index].pokes.some((p) => p.value === 256);
+          const userValue =
+            needsUser && num && !num.hidden && Number.isFinite(Number(num.value))
+              ? Number(num.value)
+              : null;
+          setEnabledPoke(index, t.checked, userValue);
+          await applyTrainer(index, {
+            enable: t.checked,
+            userValue,
+          });
+          toast(t.checked ? `On: ${pokeMatch.trainers[index].name}` : `Off: ${pokeMatch.trainers[index].name}`);
+        } else if (t.type === 'number') {
+          const row = t.closest('li');
+          const cb = row?.querySelector('input[type="checkbox"]');
+          const userValue = Number(t.value);
+          if (cb?.checked && Number.isFinite(userValue)) {
+            setEnabledPoke(index, true, userValue);
+            await applyTrainer(index, { enable: true, userValue });
+            toast(`Updated: ${pokeMatch.trainers[index].name}`);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        toast('Poke failed — is the game loaded?');
+      }
+    });
+  }
+
   function bindUi() {
     document.getElementById('btn-open')?.addEventListener('click', () => emu?.openFileDialog());
     document.getElementById('btn-games')?.addEventListener('click', () => {
@@ -687,6 +1052,7 @@
     document.getElementById('btn-pause')?.addEventListener('click', () => setPaused(!paused));
     document.getElementById('btn-restart')?.addEventListener('click', () => restart());
     document.getElementById('btn-snap-create')?.addEventListener('click', () => createSnapshot());
+    bindPokeUi();
 
     document.getElementById('btn-autoload')?.addEventListener('click', () => {
       state.autoLoad = !state.autoLoad;
@@ -796,6 +1162,7 @@
         if (state.openUrl) emu.openUrl(state.openUrl);
       }
       await renderSnapshots();
+      await refreshPokeMatch();
     });
   }
 
@@ -823,6 +1190,7 @@
     bindUi();
     bindSpectrumKeys();
     await renderSnapshots();
+    refreshPokeMatch();
 
     const container = document.getElementById('jsspeccy');
     if (!container || typeof JSSpeccy !== 'function') {

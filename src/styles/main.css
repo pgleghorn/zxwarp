@@ -187,6 +187,103 @@ body.panels-open .side {
   min-height: 1.1em;
 }
 
+.poke-panel {
+  margin: 0 0 1rem;
+  padding: 0.55rem 0.5rem 0.65rem;
+  border: 1px solid #3a2a26;
+  border-radius: 6px;
+  background: #120c0a;
+}
+
+.poke-panel[hidden] {
+  display: none !important;
+}
+
+.poke-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.poke-panel h2 {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.poke-panel .poke-apply {
+  background: #3a2a20;
+  color: var(--accent);
+  font-size: 0.72rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.poke-match {
+  margin: 0 0 0.45rem;
+  font-size: 0.68rem;
+  color: var(--ink-dim);
+  line-height: 1.35;
+}
+
+.poke-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 14rem;
+  overflow: auto;
+  display: grid;
+  gap: 0.25rem;
+  scrollbar-width: thin;
+}
+
+.poke-list li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.35rem;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--ink);
+}
+
+.poke-list label {
+  cursor: pointer;
+  line-height: 1.25;
+}
+
+.poke-list input[type='checkbox'] {
+  accent-color: var(--accent);
+}
+
+.poke-list input[type='number'] {
+  width: 3.2rem;
+  border: 1px solid #5a4038;
+  border-radius: 3px;
+  background: #1a100e;
+  color: var(--coral);
+  font: inherit;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.25rem;
+}
+
+.poke-list input[type='number'][hidden] {
+  display: none !important;
+}
+
+.poke-empty,
+.poke-note {
+  margin: 0.4rem 0 0;
+  font-size: 0.68rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.poke-note a {
+  color: var(--coral);
+}
+
 .keys {
   margin: 0 0 1rem;
   font-size: 0.78rem;

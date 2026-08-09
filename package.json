@@ -7,6 +7,7 @@
   "scripts": {
     "fetch-jsspeccy": "node scripts/fetch-jsspeccy.js && node scripts/patch-jsspeccy.js",
     "fetch-games": "node scripts/fetch-top-games.js",
+    "fetch-pokes": "node scripts/fetch-pokes.js",
     "patch-jsspeccy": "node scripts/patch-jsspeccy.js",
     "build": "node scripts/build.js",
     "serve": "node scripts/serve.js",
