@@ -1,6 +1,6 @@
 # zxwarp
 
-A static ZX Spectrum web UI using the [JSSpeccy 3](https://github.com/gasman/jsspeccy3) engine, with a look & feel heavily based on [Qaop/JS](https://torinak.com/qaop/about)
+A ZX Spectrum web UI using the [JSSpeccy 3](https://github.com/gasman/jsspeccy3) engine, with a look & feel heavily based on [Qaop/JS](https://torinak.com/qaop/about)
 
 Zxwarp adds:
 
