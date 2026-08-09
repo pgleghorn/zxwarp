@@ -1,6 +1,11 @@
 # zxwarp
 
-A static ZX Spectrum web UI around [JSSpeccy 3](https://github.com/gasman/jsspeccy3), with Qaop/JS-style deep links and a Torinak-inspired play layout.
+A static ZX Spectrum web UI using the [JSSpeccy 3](https://github.com/gasman/jsspeccy3) engine, with a look & feel heavily based on [Qaop/JS](https://torinak.com/qaop/about)
+
+Zxwarp adds:
+
+- **Tipshop pokes, auto-matched** — when a game is loaded then available pokes fuzzy-matched from [all-tipshop-pokes](https://github.com/ladyeklipse/all-tipshop-pokes) can be enabled in the control panel.
+- **DualShock 4 / USB gamepad** — plug in a PS4 pad (or any standard Gamepad API controller); map to Cursor, Sinclair, or QAOP + Space
 
 ## Quick start
 
