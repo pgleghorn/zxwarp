@@ -44,10 +44,8 @@ function escapeHtml(value) {
 
 function playHref(game) {
   if (!game.path) return null;
+  // Machine is chosen in the play UI / remembered preference — don't force 48K here.
   const bits = [`l=${encodeURIComponent(game.path)}`];
-  if (game.machine === 128) bits.push('128');
-  else if (game.machine === 5) bits.push('pentagon');
-  else bits.push('48');
   if (game.slug) bits.push(`g=${encodeURIComponent(game.slug)}`);
   return `./index.html#${bits.join('&')}`;
 }

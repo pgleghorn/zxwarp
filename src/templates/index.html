@@ -52,7 +52,7 @@
         <span class="field-label">Machine</span>
         <select id="machine-select">
           <option value="48">Spectrum 48K</option>
-          <option value="128">Spectrum 128K</option>
+          <option value="128" selected>Spectrum 128K</option>
           <option value="5">Pentagon 128</option>
         </select>
       </label>
@@ -63,7 +63,13 @@
           id="btn-autoload"
           aria-pressed="true"
           title="When on, opening a TAP/TZX automatically types LOAD &quot;&quot; and starts the tape. When off, you load tapes yourself from BASIC."
-        >Auto-load</button>
+        >Auto-load: On</button>
+        <button
+          type="button"
+          id="btn-instant"
+          aria-pressed="true"
+          title="When on, ROM tape-load traps load TAP/TZX instantly (JSSpeccy default). When off, the tape plays in real time — needed for some turbo / custom loaders."
+        >Instant tape load: On</button>
       </div>
 
       <label class="field">

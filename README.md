@@ -62,6 +62,7 @@ Games launch **fullscreen**. Press **Esc** to toggle side panels:
 | `#g=slug` | Catalog game id (title, pokes, snapshots) |
 | `#48` `#128` `#pentagon` | Machine |
 | `#autoload` / `#!autoload` | Tape auto-load on/off |
+| `#instant` / `#!instant` | Instant tape loading (ROM traps) on/off |
 | `#usr0` | 128K-style `usr0` tape load mode |
 | `#panels` | Start with side panels open |
 | `#sandbox` | Showcase mode (no open UI) |

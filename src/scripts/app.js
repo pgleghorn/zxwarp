@@ -1,6 +1,7 @@
 (() => {
   const MACHINE = { '48': 48, '128': 128, pentagon: 5, '5': 5 };
   const MACHINE_LABEL = { 48: 'Spectrum 48K', 128: 'Spectrum 128K', 5: 'Pentagon 128' };
+  const MACHINE_STORAGE_KEY = 'zxwarp.machine';
   const DB_NAME = 'zxwarp';
   const DB_STORE = 'snapshots';
   const DB_VERSION = 1;
@@ -30,9 +31,10 @@
   let pokeUndo = {};
 
   const state = {
-    machine: 48,
+    machine: 128,
     zoom: 2,
     autoLoad: true,
+    tapeTraps: true,
     tapeAutoLoadMode: 'default',
     sandbox: false,
     openUrl: null,
@@ -75,6 +77,7 @@
         const z = Number(value);
         if (z === 1 || z === 2 || z === 3) state.zoom = z;
       } else if (flag === 'autoload') state.autoLoad = !negated;
+      else if (flag === 'instant' || flag === 'traps') state.tapeTraps = !negated;
       else if (flag === 'usr0') state.tapeAutoLoadMode = negated ? 'default' : 'usr0';
       else if (flag === 'sandbox') state.sandbox = !negated;
       else if (flag === 'panels') {
@@ -85,6 +88,24 @@
 
   function hashHasMachine(hash) {
     return /(?:^|[&#;])(?:48|128|pentagon|5)(?:[&#;]|$)/i.test(hash || '');
+  }
+
+  function rememberMachine() {
+    try {
+      sessionStorage.setItem(MACHINE_STORAGE_KEY, String(state.machine));
+    } catch {
+      /* ignore quota / private mode */
+    }
+  }
+
+  function restoreMachinePreference() {
+    if (hashHasMachine(location.hash)) return;
+    try {
+      const raw = sessionStorage.getItem(MACHINE_STORAGE_KEY);
+      if (raw === '48' || raw === '128' || raw === '5') state.machine = Number(raw);
+    } catch {
+      /* ignore */
+    }
   }
 
   function findCatalogGame({ slug, path } = {}) {
@@ -109,13 +130,13 @@
     if (state.gameSlug) {
       const game = findCatalogGame({ slug: state.gameSlug });
       if (game) {
-        applyCatalogGame(game, { applyMachine: !hashHasMachine(location.hash) });
+        applyCatalogGame(game, { applyMachine: false });
         return game;
       }
     }
     const game = findCatalogGame({ path: state.openUrl });
     if (game) {
-      applyCatalogGame(game, { applyMachine: !hashHasMachine(location.hash) });
+      applyCatalogGame(game, { applyMachine: false });
       return game;
     }
     if (state.openUrl && !state.gameTitle) {
@@ -131,6 +152,7 @@
     else if (state.machine === 128) bits.push('128');
     else if (state.machine === 5) bits.push('pentagon');
     if (!state.autoLoad) bits.push('!autoload');
+    if (!state.tapeTraps) bits.push('!instant');
     if (state.tapeAutoLoadMode === 'usr0') bits.push('usr0');
     if (state.sandbox) bits.push('sandbox');
     if (document.body.classList.contains('panels-open')) bits.push('panels');
@@ -157,6 +179,12 @@
     const autoBtn = document.getElementById('btn-autoload');
     if (autoBtn) {
       autoBtn.setAttribute('aria-pressed', state.autoLoad ? 'true' : 'false');
+      autoBtn.textContent = state.autoLoad ? 'Auto-load: On' : 'Auto-load: Off';
+    }
+    const instantBtn = document.getElementById('btn-instant');
+    if (instantBtn) {
+      instantBtn.setAttribute('aria-pressed', state.tapeTraps ? 'true' : 'false');
+      instantBtn.textContent = state.tapeTraps ? 'Instant tape load: On' : 'Instant tape load: Off';
     }
     if (nowPlayingEl) {
       nowPlayingEl.textContent = state.gameTitle || '';
@@ -178,8 +206,16 @@
     setPanelsOpen(!document.body.classList.contains('panels-open'));
   }
 
+
+  function applyTapeOptions() {
+    if (!emu) return;
+    if (typeof emu.setAutoLoadTapes === 'function') emu.setAutoLoadTapes(state.autoLoad);
+    if (typeof emu.setTapeTraps === 'function') emu.setTapeTraps(state.tapeTraps);
+  }
+
   function setMachine(machine) {
     state.machine = Number(machine);
+    rememberMachine();
     if (emu) emu.setMachine(state.machine);
     setStatus(MACHINE_LABEL[state.machine] || String(state.machine));
     syncChrome();
@@ -238,19 +274,19 @@
     }
   }
 
-  function restart() {
+  function restart({ quiet = false } = {}) {
     if (!emu) return;
     setPaused(false);
     pokeUndo = {};
     if (state.openUrl) {
       emu.openUrl(state.openUrl);
-      toast('Restarting…');
+      if (!quiet) toast('Restarting…');
       setTimeout(() => {
         applyEnabledPokes({ quiet: true }).catch(() => {});
       }, 2500);
     } else if (typeof emu.reset === 'function') {
       emu.reset();
-      toast('Reset');
+      if (!quiet) toast('Reset');
     }
   }
 
@@ -1286,13 +1322,36 @@
 
     document.getElementById('btn-autoload')?.addEventListener('click', () => {
       state.autoLoad = !state.autoLoad;
-      toast(
-        state.autoLoad
-          ? 'Auto-load on — tapes will LOAD "" themselves (reload to apply)'
-          : 'Auto-load off — type LOAD "" yourself (reload to apply)'
-      );
+      applyTapeOptions();
       syncChrome();
       history.replaceState(null, '', `#${buildShareHash()}`);
+      if (state.openUrl) {
+        restart({ quiet: true });
+        toast(state.autoLoad ? 'Auto-load on — reloading' : 'Auto-load off — reloading');
+      } else {
+        toast(
+          state.autoLoad
+            ? 'Auto-load on — tapes will LOAD "" themselves'
+            : 'Auto-load off — type LOAD "" yourself'
+        );
+      }
+    });
+
+    document.getElementById('btn-instant')?.addEventListener('click', () => {
+      state.tapeTraps = !state.tapeTraps;
+      applyTapeOptions();
+      syncChrome();
+      history.replaceState(null, '', `#${buildShareHash()}`);
+      if (state.openUrl) {
+        restart({ quiet: true });
+        toast(state.tapeTraps ? 'Instant tape load on — reloading' : 'Instant tape load off — reloading');
+      } else {
+        toast(
+          state.tapeTraps
+            ? 'Instant tape loading on — ROM load traps enabled'
+            : 'Instant tape loading off — real-time tape playback'
+        );
+      }
     });
 
     document.getElementById('btn-share')?.addEventListener('click', () => {
@@ -1385,10 +1444,13 @@
     window.addEventListener('hashchange', async () => {
       state.gameTitle = null;
       parseHash(location.hash);
+      restoreMachinePreference();
+      rememberMachine();
       resolveGameFromHashAndCatalog();
       syncChrome();
       if (emu) {
         emu.setMachine(state.machine);
+        applyTapeOptions();
         if (state.openUrl) emu.openUrl(state.openUrl);
       }
       await renderSnapshots();
@@ -1409,6 +1471,8 @@
   async function start() {
     catalog = await loadCatalog();
     parseHash(location.hash);
+    restoreMachinePreference();
+    rememberMachine();
 
     // Games launch fullscreen (panels closed) unless #panels is present.
     if (!/(?:^|[&#;])panels(?:[&#;]|$)/i.test(location.hash || '')) {
@@ -1416,6 +1480,7 @@
     }
 
     resolveGameFromHashAndCatalog();
+    history.replaceState(null, '', `#${buildShareHash()}`);
     syncChrome();
     bindUi();
     bindSpectrumKeys();
@@ -1438,7 +1503,7 @@
       sandbox: state.sandbox,
       uiEnabled: false,
       keyboardEnabled: true,
-      tapeTrapsEnabled: true,
+      tapeTrapsEnabled: state.tapeTraps,
     };
     if (state.openUrl) opts.openUrl = state.openUrl;
 

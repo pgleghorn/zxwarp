@@ -148,6 +148,41 @@ body.panels-open .side {
   filter: brightness(1.12);
 }
 
+.btn-row.toggles button {
+  min-width: 0;
+  border: 1px solid transparent;
+  filter: none;
+  outline: none;
+}
+
+.btn-row.toggles button[aria-pressed='true'] {
+  background: var(--green);
+  color: var(--green-text);
+  border-color: #c8f5b4;
+  box-shadow: inset 0 0 0 1px #0c1a0840;
+  filter: none;
+  outline: none;
+}
+
+.btn-row.toggles button[aria-pressed='false'] {
+  background: #2a2220;
+  color: #9a8680;
+  border-color: #4a3c38;
+  box-shadow: none;
+  filter: none;
+  outline: none;
+}
+
+.btn-row.toggles button[aria-pressed='true']:hover {
+  filter: brightness(1.06);
+}
+
+.btn-row.toggles button[aria-pressed='false']:hover {
+  background: #3a302c;
+  color: #c4b0a8;
+  filter: none;
+}
+
 .side button.create {
   background: var(--green);
   color: var(--green-text);
