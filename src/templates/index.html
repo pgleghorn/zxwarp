@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>zxwrap – ZX Spectrum</title>
+  <title>zxwarp – ZX Spectrum</title>
   <link rel="icon" href="./favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +16,7 @@
       window.Worker = function (url, opts) {
         var w = new Orig(url, opts);
         if (String(url).indexOf('jsspeccy-worker') !== -1) {
-          window.__zxwrapWorker = w;
+          window.__zxwarpWorker = w;
         }
         return w;
       };
@@ -29,7 +29,7 @@
   <div class="play-layout" id="play-layout">
     <aside class="side side-left" id="side-left" aria-label="Emulator controls">
       <div class="brand-block">
-        <h1>zx<span>wrap</span></h1>
+        <h1>zx<span>warp</span></h1>
         <p class="tagline">ZX Spectrum emulator</p>
         <nav class="side-nav">
           <a href="./about.html">about</a>

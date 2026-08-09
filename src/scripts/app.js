@@ -1,7 +1,7 @@
 (() => {
   const MACHINE = { '48': 48, '128': 128, pentagon: 5, '5': 5 };
   const MACHINE_LABEL = { 48: 'Spectrum 48K', 128: 'Spectrum 128K', 5: 'Pentagon 128' };
-  const DB_NAME = 'zxwrap';
+  const DB_NAME = 'zxwarp';
   const DB_STORE = 'snapshots';
   const DB_VERSION = 1;
 
@@ -234,7 +234,7 @@
     } else {
       if (typeof emu.start === 'function') emu.start();
       if (pauseBtn) pauseBtn.textContent = 'Pause';
-      setStatus(state.gameTitle || 'Running');
+      setStatus(MACHINE_LABEL[state.machine] || 'Running');
     }
   }
 
@@ -372,7 +372,7 @@
   }
 
   function requestWorkerSnapshot() {
-    const worker = window.__zxwrapWorker;
+    const worker = window.__zxwarpWorker;
     if (!worker) return Promise.reject(new Error('Emulator worker not ready'));
 
     return new Promise((resolve, reject) => {
@@ -504,10 +504,10 @@
   }
 
   function safeFilename(name) {
-    return String(name || 'zxwrap')
+    return String(name || 'zxwarp')
       .replace(/[^\w\-]+/g, '_')
       .replace(/^_+|_+$/g, '')
-      .slice(0, 48) || 'zxwrap';
+      .slice(0, 48) || 'zxwarp';
   }
 
   async function downloadZ80Snapshot() {
@@ -553,11 +553,11 @@
   };
 
   const heldExtra = { alt: false, tab: false, home: false, shift: false };
-  const GAMEPAD_STORE_KEY = 'zxwrap-gamepad-map';
+  const GAMEPAD_STORE_KEY = 'zxwarp-gamepad-map';
   const GAMEPAD_DEADZONE = 0.45;
 
   function emuKey(spec, down) {
-    const worker = window.__zxwrapWorker;
+    const worker = window.__zxwarpWorker;
     if (!worker) return;
     worker.postMessage({
       message: down ? 'keyDown' : 'keyUp',
@@ -923,7 +923,7 @@
 
   /* ——— Tipshop pokes ——— */
 
-  const POKE_STORE_KEY = 'zxwrap-poke-selection';
+  const POKE_STORE_KEY = 'zxwarp-poke-selection';
 
   function normalizeTitle(s) {
     return String(s || '')
@@ -1050,7 +1050,7 @@
   }
 
   function workerRequest(message, payload = {}, resultMessage, timeoutMs = 3000) {
-    const worker = window.__zxwrapWorker;
+    const worker = window.__zxwarpWorker;
     if (!worker) return Promise.reject(new Error('Emulator worker not ready'));
     return new Promise((resolve, reject) => {
       const id = `poke-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -1447,7 +1447,7 @@
 
     const ready = () => {
       fitCanvas();
-      setStatus(state.gameTitle || MACHINE_LABEL[state.machine] || 'Ready');
+      setStatus(MACHINE_LABEL[state.machine] || 'Ready');
       syncChrome();
     };
     if (typeof emu.onReady === 'function') emu.onReady(ready);

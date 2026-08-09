@@ -99,7 +99,7 @@ function walkPokFiles(dir, out = []) {
 async function downloadZip(dest) {
   console.log('Downloading Tipshop pokes archive…');
   const res = await fetch(ZIP_URL, {
-    headers: { 'User-Agent': 'zxwrap-poke-fetch' },
+    headers: { 'User-Agent': 'zxwarp-poke-fetch' },
     redirect: 'follow',
   });
   if (!res.ok) throw new Error(`Download failed: ${res.status} ${res.statusText}`);
@@ -134,7 +134,7 @@ function findExtractedRoot(base) {
 }
 
 async function main() {
-  const work = join(tmpdir(), `zxwrap-pokes-${randomBytes(4).toString('hex')}`);
+  const work = join(tmpdir(), `zxwarp-pokes-${randomBytes(4).toString('hex')}`);
   mkdirSync(work, { recursive: true });
   const zipPath = join(work, 'pokes.zip');
 

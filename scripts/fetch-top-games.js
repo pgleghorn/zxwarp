@@ -21,7 +21,7 @@ const legacyDir = join(root, 'games', 'top50');
 const catalogPath = join(root, 'games', 'catalog.json');
 const LIMIT = Number(process.env.TOP_GAMES || 100);
 const BEST_URL = 'https://worldofspectrum.net/archive/best-games/';
-const UA = 'zxwrap/0.1 (personal archive mirror; +https://github.com/local/zxwrap)';
+const UA = 'zxwarp/0.1 (personal archive mirror; +https://github.com/local/zxwarp)';
 
 function decodeEntities(text) {
   return String(text)

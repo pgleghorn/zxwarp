@@ -1,4 +1,4 @@
-# zxwrap
+# zxwarp
 
 A small Node.js project that builds a **static** ZX Spectrum web UI around [JSSpeccy 3](https://github.com/gasman/jsspeccy3). The front-end aims for the same kind of clear, URL-driven convenience as [Qaop/JS](https://torinak.com/qaop/about).
 

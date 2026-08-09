@@ -71,5 +71,5 @@ const server = createServer((req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`zxwrap serving dist/ at http://localhost:${port}/`);
+  console.log(`zxwarp serving dist/ at http://localhost:${port}/`);
 });
