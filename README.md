@@ -1,69 +1,88 @@
 # zxwarp
 
-A small Node.js project that builds a **static** ZX Spectrum web UI around [JSSpeccy 3](https://github.com/gasman/jsspeccy3). The front-end aims for the same kind of clear, URL-driven convenience as [Qaop/JS](https://torinak.com/qaop/about).
+A static ZX Spectrum web UI around [JSSpeccy 3](https://github.com/gasman/jsspeccy3), with Qaop/JS-style deep links and a Torinak-inspired play layout.
 
 ## Quick start
 
 ```bash
-npm start
+npm run fetch-games   # download WoS Top 100 zips (not stored in git)
+npm run fetch-pokes   # optional: Tipshop poke database
+npm start             # build + serve
 ```
 
-Then open http://localhost:4173/
+Open http://localhost:4173/
 
-- `npm run build` — write the static site to `dist/`
-- `npm run serve` — serve `dist/` with the correct `application/wasm` MIME type
-- `npm run fetch-jsspeccy` — re-download JSSpeccy 3.2 into `vendor/`
+| Script | Purpose |
+|--------|---------|
+| `npm run build` | Write static site to `dist/` |
+| `npm run serve` | Serve `dist/` (correct `application/wasm` MIME) |
+| `npm run fetch-games` | Fetch World of Spectrum Top 100 into `games/top100/` |
+| `npm run fetch-pokes` | Build `games/pokes.json` from Tipshop |
+| `npm run fetch-jsspeccy` | Re-download + patch JSSpeccy into `vendor/` |
 
-## Usage
+Requires Node.js 18+.
 
-| Control | Action |
-|--------|--------|
-| **Open** / `O` | Load TAP, TZX, Z80, SNA, SZX, or ZIP |
-| **48K / 128K / Pentagon** | Switch machine |
-| **100% / 200% / 300%** / `1` `2` `3` | Zoom |
-| **Full** / `F` | Fullscreen |
-| **Esc** | Keys panel |
-| **Share** | Copy a deep link |
+## Play UI
+
+Games launch **fullscreen**. Press **Esc** to toggle side panels:
+
+- **Left** — machine, auto-load, gamepad map, Tipshop pokes, keys, share
+- **Right** — snapshot slots (IndexedDB, per game)
+
+| Key / control | Action |
+|---------------|--------|
+| Esc | Toggle control panels |
+| Shift / Alt / Tab / Home | Caps Shift / Symbol Shift / Extended / Edit |
+| Del | Restart current game |
+| F1 | About |
+| F2 / F3 | Remember / recall snapshot |
+| Pause | Pause / resume |
+| Insert | Games list |
+| Ctrl+O / Ctrl+S | Open / remember (when paused) |
+| Save | Download a `.z80` of the current state |
+| Gamepad | USB DualShock 4 / standard pad → Cursor, Sinclair, or QAOP |
 
 ### URL hash parameters
 
 ```text
-/#48&zoom=2&l=games/mygame.z80
+/#48&g=bomb-jack&l=games/top100/009-bomb-jack.tap.zip
+/#48&panels&g=bomb-jack&l=games/top100/009-bomb-jack.tap.zip
 /#128&usr0&l=https://example.com/demo.tap
 /#!autoload&pentagon
 ```
 
 | Param | Meaning |
 |-------|---------|
-| `#l=URL` | Load program / tape / archive |
+| `#l=URL` | Load tape / snapshot / archive |
+| `#g=slug` | Catalog game id (title, pokes, snapshots) |
 | `#48` `#128` `#pentagon` | Machine |
-| `#zoom=1\|2\|3` | Scale |
-| `#autoload` / `#!autoload` | Tape auto-load |
+| `#autoload` / `#!autoload` | Tape auto-load on/off |
 | `#usr0` | 128K-style `usr0` tape load mode |
+| `#panels` | Start with side panels open |
 | `#sandbox` | Showcase mode (no open UI) |
 
-See [about](src/templates/about.html) (built to `dist/about.html`) for the full reference.
+See `dist/about.html` after build for the full reference.
 
 ## Games library
 
-The World of Spectrum visitor-voted **Top 100** is stored under `games/top100/` with metadata in `games/catalog.json`.
+Visitor-voted **Top 100** from [World of Spectrum – Best Games](https://worldofspectrum.net/archive/best-games/).
+
+- Metadata: `games/catalog.json` (committed)
+- Archives: `games/top100/*.zip` — **gitignored**; run `npm run fetch-games` locally
+- Browse/play: `/games.html` (by rank and by year)
+
+Some titles have no public WoS download; they stay listed with a World of Spectrum link.
+
+Drop extra `.tap` / `.tzx` / `.z80` / `.sna` / `.szx` / `.zip` under `games/` (outside `top100/`) and rebuild — they appear under “Other local files”.
+
+## Pokes
+
+Tipshop trainers from [all-tipshop-pokes](https://github.com/ladyeklipse/all-tipshop-pokes) are matched fuzzily to the loaded game. Enable them from the left panel **after** the game is running. Selections are stored in `localStorage`.
 
 ```bash
-npm run fetch-games   # refresh from worldofspectrum.net
-npm run build
+npm run fetch-pokes   # writes games/pokes.json
 ```
-
-Open **Games** (`/games.html`) for a Qaop-style browser: jump by year, or scroll the ranked Top 100, then click to play. Games launch **fullscreen**; press **Esc** to toggle Torinak-style side panels (controls left, snapshot slots right). Snapshots are real save-states kept in IndexedDB per game.
-
-```text
-/#48&g=bomb-jack&l=games/top100/009-bomb-jack.tap.zip
-/#48&panels&g=bomb-jack&l=games/top100/009-bomb-jack.tap.zip
-```
-
-Keys follow Qaop/JS: `Esc` panels, `F2`/`F3` remember/recall state, `Del` restart, `Insert` games, `Ctrl+O`/`Ctrl+S` when paused. Zoom is UI-only (no `1`/`2`/`3` shortcuts).
-
-Some titles have no public WoS `.pub` mirror — they remain listed with a World of Spectrum link.
 
 ## Licence
 
-GPL-3.0-or-later (required by JSSpeccy 3). Spectrum ROMs © Amstrad PLC; redistributed with permission as part of JSSpeccy. Game tape images remain © their publishers; see `games/README.md`.
+GPL-3.0-or-later (required by JSSpeccy 3). Spectrum ROMs © Amstrad PLC; redistributed with permission as part of JSSpeccy. Game tape images remain © their publishers — fetch them for personal/offline use; do not commit redistributable archives you are not allowed to publish. See `games/README.md`.

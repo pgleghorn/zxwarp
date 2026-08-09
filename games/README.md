@@ -8,7 +8,7 @@ Visitor-voted classics from [World of Spectrum – Best Games](https://worldofsp
 npm run fetch-games
 ```
 
-Metadata lives in `catalog.json`. The static site’s Games page lists them by **rank** and by **year** (Qaop-style). Click a title to launch the emulator:
+Zip archives under `games/` are **not committed** (see root `.gitignore`). Metadata lives in `catalog.json`. The Games page lists titles by **rank** and by **year**.
 
 ```text
 ./#48&g=bomb-jack&l=games/top100/009-bomb-jack.tap.zip
@@ -16,7 +16,7 @@ Metadata lives in `catalog.json`. The static site’s Games page lists them by *
 
 ## Licence note
 
-Tape/snapshot files remain copyright of their original publishers. They are mirrored here for personal offline play, as redistributed by World of Spectrum / Spectrum Computing archives. Remove titles you do not have rights to redistribute if you publish this repo.
+Tape/snapshot files remain copyright of their original publishers. Fetch them for personal offline play as redistributed by World of Spectrum / Spectrum Computing. Do not publish archives you do not have rights to redistribute.
 
 ## Drop your own files
 
