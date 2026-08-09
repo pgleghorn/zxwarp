@@ -10,19 +10,18 @@ Zxwarp adds:
 ## Quick start
 
 ```bash
-npm run fetch-games   # download WoS Top 100 zips (not stored in git)
-npm run fetch-pokes   # optional: Tipshop poke database
-npm start             # build + serve
+npm start             # fetch games/pokes + build + serve
+npm run build         # fetch supporting data + write dist/
 ```
 
 Open http://localhost:4173/
 
 | Script | Purpose |
 |--------|---------|
-| `npm run build` | Write static site to `dist/` |
+| `npm run build` | Fetch games + pokes, then write static site to `dist/` |
 | `npm run serve` | Serve `dist/` (correct `application/wasm` MIME) |
-| `npm run fetch-games` | Fetch World of Spectrum Top 100 into `games/top100/` |
-| `npm run fetch-pokes` | Build `games/pokes.json` from Tipshop |
+| `npm run fetch-games` | Fetch World of Spectrum Top 100 into `games/top100/` (also run by `build`) |
+| `npm run fetch-pokes` | Build `games/pokes.json` from Tipshop (also run by `build`) |
 | `npm run fetch-jsspeccy` | Re-download + patch JSSpeccy into `vendor/` |
 
 Requires Node.js 18+.
@@ -74,7 +73,7 @@ See `dist/about.html` after build for the full reference.
 Visitor-voted **Top 100** from [World of Spectrum – Best Games](https://worldofspectrum.net/archive/best-games/).
 
 - Metadata: `games/catalog.json` (committed)
-- Archives: `games/top100/*.zip` — **gitignored**; run `npm run fetch-games` locally
+- Archives: `games/top100/*.zip` — **gitignored**; fetched by `npm run build`
 - Browse/play: `/games.html` (by rank and by year)
 
 Some titles have no public WoS download; they stay listed with a World of Spectrum link.
@@ -86,7 +85,7 @@ Drop extra `.tap` / `.tzx` / `.z80` / `.sna` / `.szx` / `.zip` under `games/` (o
 Tipshop trainers from [all-tipshop-pokes](https://github.com/ladyeklipse/all-tipshop-pokes) are matched fuzzily to the loaded game. Enable them from the left panel **after** the game is running. Selections are stored in `localStorage`.
 
 ```bash
-npm run fetch-pokes   # writes games/pokes.json
+npm run build         # also writes games/pokes.json
 ```
 
 ## Licence

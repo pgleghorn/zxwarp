@@ -34,6 +34,21 @@ function ensureJsspeccy() {
   });
 }
 
+function runScript(name) {
+  execFileSync(process.execPath, [join(root, 'scripts', name)], {
+    stdio: 'inherit',
+  });
+}
+
+function ensureSupportingData() {
+  // Always refresh catalog / pokes so `npm run build` is enough for a full site.
+  // Game zip downloads are cached; missing archives are fetched.
+  console.log('Fetching games…');
+  runScript('fetch-top-games.js');
+  console.log('Fetching pokes…');
+  runScript('fetch-pokes.js');
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll('&', '&amp;')
@@ -153,6 +168,7 @@ function copyTemplate(name, vars = {}) {
 
 function main() {
   ensureJsspeccy();
+  ensureSupportingData();
 
   rmSync(dist, { recursive: true, force: true });
   mkdirSync(dist, { recursive: true });
@@ -208,10 +224,10 @@ function main() {
   copyTemplate('index.html');
   copyTemplate('about.html');
   copyTemplate('games.html', {
-    YEAR_NAV: page.yearNav || '<span class="empty">No catalog yet — run <code>npm run fetch-games</code>.</span>',
+    YEAR_NAV: page.yearNav || '<span class="empty">No catalog yet — <code>npm run build</code> fetches games.</span>',
     RANK_LIST:
       page.rankList ||
-      '<li class="empty">No catalog yet. Run <code>npm run fetch-games</code>.</li>',
+      '<li class="empty">No catalog yet. <code>npm run build</code> fetches games.</li>',
     YEAR_SECTIONS: `${page.yearSections || ''}\n${looseHtml}`,
   });
 
