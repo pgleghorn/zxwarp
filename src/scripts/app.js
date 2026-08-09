@@ -279,10 +279,17 @@
       setTimeout(() => {
         applyEnabledPokes({ quiet: true }).catch(() => {});
       }, 2500);
-    } else if (typeof emu.reset === 'function') {
-      emu.reset();
-      if (!quiet) toast('Reset');
+    } else {
+      powerReset({ quiet });
     }
+  }
+
+  function powerReset({ quiet = false } = {}) {
+    if (!emu || typeof emu.reset !== 'function') return;
+    setPaused(false);
+    pokeUndo = {};
+    emu.reset();
+    if (!quiet) toast('Reset');
   }
 
   /* ——— IndexedDB snapshots ——— */
@@ -1310,12 +1317,10 @@
     });
 
     document.getElementById('btn-open')?.addEventListener('click', () => emu?.openFileDialog());
-    document.getElementById('btn-games')?.addEventListener('click', () => {
-      location.href = './games.html';
-    });
     document.getElementById('btn-save')?.addEventListener('click', () => downloadZ80Snapshot());
     document.getElementById('btn-pause')?.addEventListener('click', () => setPaused(!paused));
     document.getElementById('btn-restart')?.addEventListener('click', () => restart());
+    document.getElementById('btn-reset')?.addEventListener('click', () => powerReset());
     document.getElementById('btn-snap-create')?.addEventListener('click', () => createSnapshot());
     bindPokeUi();
 

@@ -43,6 +43,8 @@ The bare root page opens the control panels. Game links launch **fullscreen**. P
 | Pause | Pause / resume |
 | Insert | Games list |
 | Ctrl+O / Ctrl+S | Open / remember (when paused) |
+| Restart | Reload the current game |
+| Reset | Power-reset the Spectrum |
 | Save | Download a `.z80` of the current state |
 | Gamepad | USB DualShock 4 / standard pad → Cursor, Sinclair, or QAOP |
 
