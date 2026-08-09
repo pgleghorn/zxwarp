@@ -32,7 +32,6 @@
 
   const state = {
     machine: 128,
-    zoom: 2,
     autoLoad: true,
     tapeTraps: true,
     tapeAutoLoadMode: 'default',
@@ -73,9 +72,6 @@
       else if (flag === 'g' || flag === 'game') state.gameSlug = value;
       else if (flag === '48' || flag === '128' || flag === 'pentagon' || flag === '5') {
         state.machine = MACHINE[flag] ?? Number(flag);
-      } else if (flag === 'zoom') {
-        const z = Number(value);
-        if (z === 1 || z === 2 || z === 3) state.zoom = z;
       } else if (flag === 'autoload') state.autoLoad = !negated;
       else if (flag === 'instant' || flag === 'traps') state.tapeTraps = !negated;
       else if (flag === 'usr0') state.tapeAutoLoadMode = negated ? 'default' : 'usr0';
@@ -217,7 +213,6 @@
     state.machine = Number(machine);
     rememberMachine();
     if (emu) emu.setMachine(state.machine);
-    setStatus(MACHINE_LABEL[state.machine] || String(state.machine));
     syncChrome();
     history.replaceState(null, '', `#${buildShareHash()}`);
   }
@@ -270,7 +265,7 @@
     } else {
       if (typeof emu.start === 'function') emu.start();
       if (pauseBtn) pauseBtn.textContent = 'Pause';
-      setStatus(MACHINE_LABEL[state.machine] || 'Running');
+      setStatus('');
     }
   }
 
@@ -1310,6 +1305,10 @@
   }
 
   function bindUi() {
+    document.getElementById('crt')?.addEventListener('click', () => {
+      togglePanels();
+    });
+
     document.getElementById('btn-open')?.addEventListener('click', () => emu?.openFileDialog());
     document.getElementById('btn-games')?.addEventListener('click', () => {
       location.href = './games.html';
@@ -1474,8 +1473,13 @@
     restoreMachinePreference();
     rememberMachine();
 
-    // Games launch fullscreen (panels closed) unless #panels is present.
-    if (!/(?:^|[&#;])panels(?:[&#;]|$)/i.test(location.hash || '')) {
+    // Bare root (no hash / query): show control panels. Game links stay fullscreen
+    // unless #panels is present.
+    const bareLaunch =
+      !location.search && !(location.hash || '').replace(/^#/, '').trim();
+    if (bareLaunch) {
+      document.body.classList.add('panels-open');
+    } else if (!/(?:^|[&#;])panels(?:[&#;]|$)/i.test(location.hash || '')) {
       document.body.classList.remove('panels-open');
     }
 
@@ -1495,7 +1499,7 @@
     }
 
     const opts = {
-      zoom: state.zoom,
+      zoom: 2,
       machine: state.machine,
       autoStart: true,
       autoLoadTapes: state.autoLoad,
@@ -1512,7 +1516,7 @@
 
     const ready = () => {
       fitCanvas();
-      setStatus(MACHINE_LABEL[state.machine] || 'Ready');
+      setStatus('');
       syncChrome();
     };
     if (typeof emu.onReady === 'function') emu.onReady(ready);

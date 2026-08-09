@@ -402,6 +402,7 @@ body.panels-open .side {
 
 /* Screen fills the viewport when panels are closed; shrinks for sidebars when open */
 .crt {
+  cursor: pointer;
   --crt-max-h: 100vh;
   --crt-max-w: 100vw;
   position: relative;

@@ -26,10 +26,8 @@
   <main class="doc">
     <h1>zx<span>warp</span> – ZX Spectrum emulator</h1>
     <p class="lead">
-      A ZX Spectrum web UI using the
-      <a href="https://github.com/gasman/jsspeccy3">JSSpeccy 3</a>
-      engine, with a look &amp; feel heavily based on
-      <a href="https://torinak.com/qaop/about">Qaop/JS</a>.
+      A ZX Spectrum web emulator using Matt Westcott's superb <a href="https://github.com/gasman/jsspeccy3">JSSpeccy 3</a> engine,
+      with a UI look &amp; feel heavily based on Jan Bobrowski’s excellent <a href="https://torinak.com/qaop/about">Qaop/JS</a>, please show your support for that at <a href="https://torinak.com/qaop/donate">https://torinak.com/qaop/donate</a>.
     </p>
     <p>zxwarp adds:</p>
     <ul>
@@ -48,7 +46,7 @@
     <h2>Keys</h2>
     <table>
       <tbody>
-            <tr><th><kbd>Esc</kbd></th><td>Menu panels</td></tr>
+            <tr><th><kbd>Esc</kbd> / click screen</th><td>Menu panels</td></tr>
         <tr><th><kbd>Del</kbd></th><td>Reset, restart</td></tr>
         <tr><th><kbd>F1</kbd></th><td>About</td></tr>
         <tr><th><kbd>F2</kbd></th><td>Remember state</td></tr>
@@ -70,14 +68,13 @@
         <tr><th><code>#48</code></th><td>Spectrum 48K</td></tr>
         <tr><th><code>#128</code></th><td>Spectrum 128K</td></tr>
         <tr><th><code>#pentagon</code></th><td>Pentagon 128</td></tr>
-        <tr><th><code>#zoom=1|2|3</code></th><td>Display scale</td></tr>
         <tr><th><code>#autoload</code></th><td>Auto-load tapes (default on)</td></tr>
         <tr><th><code>#!autoload</code></th><td>Disable auto-load tapes</td></tr>
         <tr><th><code>#instant</code></th><td>Instant tape loading via ROM traps (default on)</td></tr>
         <tr><th><code>#!instant</code></th><td>Disable instant loading (real-time tape)</td></tr>
         <tr><th><code>#usr0</code></th><td>Use <code>usr0</code> tape auto-load mode (128K / Pentagon)</td></tr>
         <tr><th><code>#sandbox</code></th><td>Hide open-file affordances (showcase mode)</td></tr>
-        <tr><th><code>#panels</code></th><td>Start with side panels open (default: fullscreen when loading a game)</td></tr>
+        <tr><th><code>#panels</code></th><td>Start with side panels open (bare root opens them; game links default to fullscreen)</td></tr>
       </tbody>
     </table>
 
@@ -113,8 +110,9 @@ npm run serve      # serve dist/ (wasm MIME configured)</code></pre>
     </p>
     <p>
       zxwarp itself is GPL-3.0-or-later because it redistributes JSSpeccy.
-      UI convenience patterns inspired by Jan Bobrowski’s
-      <a href="https://torinak.com/qaop/about">Qaop/JS</a>.
+    </p>
+    <p>
+      The UI is heavily inspired by Jan Bobrowski’s amazing <a href="https://torinak.com/qaop/about">Qaop/JS</a>. Please show your support at <a href="https://torinak.com/qaop/donate">https://torinak.com/qaop/donate</a>.
     </p>
   </main>
 </body>

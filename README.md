@@ -1,8 +1,8 @@
 # zxwarp
 
-A ZX Spectrum web UI using the [JSSpeccy 3](https://github.com/gasman/jsspeccy3) engine, with a look & feel heavily based on [Qaop/JS](https://torinak.com/qaop/about)
+A ZX Spectrum web emulator using Matt Wescott's superb [JSSpeccy 3](https://github.com/gasman/jsspeccy3) engine, with a UI look & feel heavily based on Jan Bobrowski’s excellent [Qaop/JS](https://torinak.com/qaop/about), please show your support for that at [https://torinak.com/qaop/donate](https://torinak.com/qaop/donate)
 
-Zxwarp adds:
+zxwarp adds:
 
 - **Tipshop pokes, auto-matched** — when a game is loaded then available pokes fuzzy-matched from [all-tipshop-pokes](https://github.com/ladyeklipse/all-tipshop-pokes) can be enabled in the control panel.
 - **DualShock 4 / USB gamepad** — plug in a PS4 pad (or any standard Gamepad API controller); map to Cursor, Sinclair, or QAOP + Space
@@ -28,14 +28,14 @@ Requires Node.js 18+.
 
 ## Play UI
 
-Games launch **fullscreen**. Press **Esc** to toggle side panels:
+The bare root page opens the control panels. Game links launch **fullscreen**. Press **Esc** to toggle side panels:
 
 - **Left** — machine, auto-load, gamepad map, Tipshop pokes, keys, share
 - **Right** — snapshot slots (IndexedDB, per game)
 
 | Key / control | Action |
 |---------------|--------|
-| Esc | Toggle control panels |
+| Esc / click screen | Toggle control panels |
 | Shift / Alt / Tab / Home | Caps Shift / Symbol Shift / Extended / Edit |
 | Del | Restart current game |
 | F1 | About |
@@ -63,7 +63,7 @@ Games launch **fullscreen**. Press **Esc** to toggle side panels:
 | `#autoload` / `#!autoload` | Tape auto-load on/off |
 | `#instant` / `#!instant` | Instant tape loading (ROM traps) on/off |
 | `#usr0` | 128K-style `usr0` tape load mode |
-| `#panels` | Start with side panels open |
+| `#panels` | Start with side panels open (bare root does this by default) |
 | `#sandbox` | Showcase mode (no open UI) |
 
 See `dist/about.html` after build for the full reference.
