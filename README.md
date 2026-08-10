@@ -6,6 +6,7 @@ zxwarp adds:
 
 - **Tipshop pokes, auto-matched** — when a game is loaded then available pokes fuzzy-matched from [all-tipshop-pokes](https://github.com/ladyeklipse/all-tipshop-pokes) can be enabled in the control panel.
 - **DualShock 4 / USB gamepad** — plug in a PS4 pad (or any standard Gamepad API controller); map to Cursor, Sinclair, or QAOP + Space
+- **Realtime zoomable memory map** — scroll to zoom, drag to pan, hover for address / byte.
 
 ## Quick start
 
@@ -32,7 +33,7 @@ Requires Node.js 18+.
 The bare root page opens the control panels. Game links launch **fullscreen**. Press **Esc** to toggle side panels:
 
 - **Left** — machine, auto-load, gamepad map, Tipshop pokes, keys, share
-- **Right** — snapshot slots (IndexedDB, per game)
+- **Right** — snapshot slots (IndexedDB, per game) and a realtime memory map
 
 | Key / control | Action |
 |---------------|--------|
@@ -86,10 +87,6 @@ Drop extra `.tap` / `.tzx` / `.z80` / `.sna` / `.szx` / `.zip` under `games/` (o
 ## Pokes
 
 Tipshop trainers from [all-tipshop-pokes](https://github.com/ladyeklipse/all-tipshop-pokes) are matched fuzzily to the loaded game. Enable them from the left panel **after** the game is running. Selections are stored in `localStorage`.
-
-```bash
-npm run build         # also writes games/pokes.json
-```
 
 ## Licence
 
