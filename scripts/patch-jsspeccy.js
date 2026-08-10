@@ -16,11 +16,17 @@ function patchMain(src) {
   const needle =
     'loadSnapshotFromStruct:e=>{a.loadSnapshot(e)},onReady:e=>{a.isReady?e():a.onReadyHandlers.push(e)},exit:()=>{a.exit(),l.unload()}';
   const replacement =
-    'loadSnapshotFromStruct:e=>{a.loadSnapshot(e)},pause:()=>{a.pause()},start:()=>{a.start()},reset:()=>{a.reset()},onReady:e=>{a.isReady?e():a.onReadyHandlers.push(e)},exit:()=>{a.exit(),l.unload()}';
+    'loadSnapshotFromStruct:e=>{a.loadSnapshot(e)},pause:()=>{a.pause()},start:()=>{a.start()},reset:()=>{a.reset()},keyDown:e=>{a.keyboardHandler&&a.keyboardHandler.keyDown(e)},keyUp:e=>{a.keyboardHandler&&a.keyboardHandler.keyUp(e)},getWorker:()=>a.worker,onReady:e=>{a.isReady?e():a.onReadyHandlers.push(e)},exit:()=>{a.exit(),l.unload()}';
   if (out.includes(needle)) {
     out = out.replace(needle, replacement);
   } else if (!out.includes('pause:()=>{a.pause()}')) {
     throw new Error('jsspeccy.js: public API patch point not found');
+  } else if (!out.includes('keyDown:e=>{a.keyboardHandler')) {
+    // pause already patched — add key helpers if missing
+    out = out.replace(
+      'pause:()=>{a.pause()},start:()=>{a.start()},reset:()=>{a.reset()},',
+      'pause:()=>{a.pause()},start:()=>{a.start()},reset:()=>{a.reset()},keyDown:e=>{a.keyboardHandler&&a.keyboardHandler.keyDown(e)},keyUp:e=>{a.keyboardHandler&&a.keyboardHandler.keyUp(e)},getWorker:()=>a.worker,'
+    );
   }
 
   // Shift(16)=Caps already; keep Ctrl(17)=Symbol; add Alt(18)=Symbol, Tab(9)=Ext, Home(36)=Edit

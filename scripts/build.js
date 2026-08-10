@@ -43,12 +43,14 @@ function runScript(name) {
 }
 
 function ensureSupportingData() {
-  // Always refresh catalog / pokes so `npm run build` is enough for a full site.
+  // Always refresh catalog / pokes / usb ids so `npm run build` is enough for a full site.
   // Game zip downloads are cached; missing archives are fetched.
   console.log('Fetching games…');
   runScript('fetch-top-games.js');
   console.log('Fetching pokes…');
   runScript('fetch-pokes.js');
+  console.log('Fetching USB IDs…');
+  runScript('fetch-usb-ids.js');
 }
 
 function escapeHtml(value) {
@@ -182,7 +184,16 @@ function main() {
 
   mkdirSync(join(dist, 'assets'), { recursive: true });
   copyFileSync(join(root, 'src', 'styles', 'main.css'), join(dist, 'assets', 'main.css'));
+  copyFileSync(join(root, 'src', 'scripts', 'usb-ids.js'), join(dist, 'assets', 'usb-ids.js'));
   copyFileSync(join(root, 'src', 'scripts', 'app.js'), join(dist, 'assets', 'app.js'));
+  copyFileSync(join(root, 'src', 'scripts', 'gamepad-debug.js'), join(dist, 'assets', 'gamepad-debug.js'));
+
+  const usbIdsSrc = join(root, 'data', 'usb-ids.json');
+  if (existsSync(usbIdsSrc)) {
+    copyFileSync(usbIdsSrc, join(dist, 'assets', 'usb-ids.json'));
+  } else {
+    console.warn('Warning: data/usb-ids.json missing — gamepad names will fall back to raw IDs');
+  }
 
   if (existsSync(gamesDir)) {
     cpSync(gamesDir, join(dist, 'games'), { recursive: true });
@@ -226,6 +237,7 @@ function main() {
 
   copyTemplate('index.html');
   copyTemplate('about.html');
+  copyTemplate('gamepad-debug.html');
   copyTemplate('games.html', {
     YEAR_NAV: page.yearNav || '<span class="empty">No catalog yet — <code>npm run build</code> fetches games.</span>',
     RANK_LIST:

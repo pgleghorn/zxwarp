@@ -99,6 +99,9 @@ body.panels-open .side {
 .side-right {
   color: var(--ink);
   border-left: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .brand-block h1 {
@@ -166,43 +169,17 @@ body.panels-open .side {
 
 .btn-row.toggles button {
   min-width: 0;
-  border: 1px solid transparent;
-  filter: none;
-  outline: none;
-}
-
-.btn-row.toggles button[aria-pressed='true'] {
-  background: var(--green);
-  color: var(--green-text);
-  border-color: #c8f5b4;
-  box-shadow: inset 0 0 0 1px #0c1a0840;
-  filter: none;
-  outline: none;
 }
 
 .btn-row.toggles button[aria-pressed='false'] {
-  background: #2a2220;
-  color: #9a8680;
-  border-color: #4a3c38;
-  box-shadow: none;
+  background: #5a3830;
+  color: #d4b8b0;
   filter: none;
   outline: none;
 }
 
-.btn-row.toggles button[aria-pressed='true']:hover {
-  filter: brightness(1.06);
-}
-
 .btn-row.toggles button[aria-pressed='false']:hover {
-  background: #3a302c;
-  color: #c4b0a8;
-  filter: none;
-}
-
-.side button.create {
-  background: var(--green);
-  color: var(--green-text);
-  margin-bottom: 0.75rem;
+  filter: brightness(1.08);
 }
 
 .field {
@@ -222,8 +199,27 @@ body.panels-open .side {
   padding: 0.35rem 0.4rem;
 }
 
+.gamepad-panel {
+  margin: 0.55rem 0 0.65rem;
+}
+
+.gamepad-panel h2 {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.gamepad-body[hidden] {
+  display: none !important;
+}
+
+.gamepad-panel .field {
+  margin: 0;
+}
+
 .gamepad-status {
-  margin: -0.35rem 0 0.75rem;
+  margin: 0.35rem 0 0;
   font-size: 0.7rem;
   font-family: var(--font-mono);
   color: var(--muted);
@@ -234,32 +230,71 @@ body.panels-open .side {
   color: var(--green);
 }
 
-.now-playing {
-  margin: 0.75rem 0 0.2rem;
-  color: #ffc4b4;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
+.gamepad-prompt {
+  display: block;
+}
+
+.gamepad-prompt[hidden] {
+  display: none !important;
+}
+
+.gamepad-ident {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  line-height: 1.35;
+  color: var(--green);
+}
+
+.gamepad-ident[hidden] {
+  display: none !important;
+}
+
+.gamepad-vendor,
+.gamepad-product {
+  color: inherit;
+}
+
+.gamepad-product {
+  font-weight: 600;
+}
+
+.gamepad-input {
   min-height: 1.1em;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.gamepad-input:empty::before {
+  content: '\00a0';
 }
 
 .status {
-  margin: 0 0 0.85rem;
+  margin: 0.35rem 0 0.15rem;
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 0.72rem;
-  min-height: 1.1em;
+  min-height: 0;
+}
+
+.status:empty {
+  margin: 0;
 }
 
 .poke-panel {
-  margin: 0 0 1rem;
-  padding: 0.55rem 0.5rem 0.65rem;
-  border: 1px solid #3a2a26;
-  border-radius: 6px;
-  background: #120c0a;
+  margin: 0.35rem 0 0.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .poke-panel[hidden] {
   display: none !important;
+}
+
+.poke-panel.expanded {
+  padding-bottom: 0;
 }
 
 .poke-head {
@@ -267,14 +302,76 @@ body.panels-open .side {
   align-items: center;
   justify-content: space-between;
   gap: 0.35rem;
+}
+
+.poke-panel.expanded .poke-head,
+.gamepad-panel.expanded .poke-head,
+.shortcuts-panel.expanded .poke-head,
+.snap-panel.expanded .poke-head,
+.memmap.expanded .poke-head {
   margin-bottom: 0.35rem;
 }
 
 .poke-panel h2 {
   margin: 0;
   font-size: 0.92rem;
-  color: var(--accent);
   font-weight: 600;
+  color: var(--accent);
+}
+
+/* Reset .side button chrome so this reads as a heading, not a control */
+.side .poke-toggle,
+.side button.poke-toggle {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  box-shadow: none;
+  outline: none;
+  filter: none;
+  cursor: pointer;
+}
+
+.side .poke-toggle:hover,
+.side button.poke-toggle:hover {
+  filter: none;
+  color: #ffe08a;
+}
+
+.poke-chevron {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+  opacity: 0.75;
+  margin-top: -0.12rem;
+}
+
+.poke-panel.expanded .poke-chevron,
+.gamepad-panel.expanded .poke-chevron,
+.shortcuts-panel.expanded .poke-chevron,
+.snap-panel.expanded .poke-chevron,
+.memmap.expanded .poke-chevron {
+  transform: rotate(45deg);
+  margin-top: 0;
+  opacity: 1;
+}
+
+.poke-body[hidden] {
+  display: none !important;
 }
 
 .poke-panel .poke-apply {
@@ -282,6 +379,10 @@ body.panels-open .side {
   color: var(--accent);
   font-size: 0.72rem;
   padding: 0.25rem 0.5rem;
+}
+
+.poke-panel .poke-apply[hidden] {
+  display: none !important;
 }
 
 .poke-match {
@@ -347,8 +448,23 @@ body.panels-open .side {
   color: var(--coral);
 }
 
+.shortcuts-panel {
+  margin: 0.75rem 0 1rem;
+}
+
+.shortcuts-panel h2 {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.shortcuts-body[hidden] {
+  display: none !important;
+}
+
 .keys {
-  margin: 0 0 1rem;
+  margin: 0 0 0.5rem;
   font-size: 0.78rem;
 }
 
@@ -511,10 +627,111 @@ body.panels-open .esc-hint {
 }
 
 .side-right h2 {
-  margin: 0 0 0.65rem;
-  font-size: 1rem;
-  color: var(--green);
+  margin: 0;
+  font-size: 0.92rem;
   font-weight: 600;
+  color: var(--accent);
+}
+
+.snap-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.snap-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.snap-body[hidden] {
+  display: none !important;
+}
+
+.snap-body .btn-row {
+  margin-bottom: 0.45rem;
+}
+
+.memmap {
+  flex: 0 0 auto;
+  padding-top: 0.35rem;
+}
+
+.memmap-body[hidden] {
+  display: none !important;
+}
+
+.memmap-popout {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.85;
+  cursor: pointer;
+  filter: none;
+  outline: none;
+  box-shadow: none;
+}
+
+.memmap-popout:hover {
+  background: transparent;
+  color: #ffe08a;
+  opacity: 1;
+  filter: none;
+}
+
+.memmap canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 256 / 192;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #050805;
+  border: 1px solid #2a3a28;
+  border-radius: 4px;
+}
+
+.memmap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.35rem 0 0;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  color: #9ab090;
+}
+
+.memmap-legend span::before {
+  content: '';
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-right: 0.25rem;
+  border-radius: 2px;
+  vertical-align: -0.05rem;
+}
+
+.memmap-legend .mm-screen::before {
+  background: #4a8cff;
+}
+
+.memmap-legend .mm-attr::before {
+  background: #e05ad0;
+}
+
+.memmap-legend .mm-ram::before {
+  background: #6ecf6a;
 }
 
 .snap-list {
@@ -580,18 +797,6 @@ body.panels-open .esc-hint {
 .snap-list .snap-actions button.danger {
   background: #3a2220;
   color: #f0a898;
-}
-
-.snap-empty,
-.snap-note {
-  font-size: 0.72rem;
-  color: var(--muted);
-  margin: 0.5rem 0 0;
-  line-height: 1.35;
-}
-
-.snap-empty[hidden] {
-  display: none !important;
 }
 
 .toast {
@@ -866,4 +1071,168 @@ body.panels-open .esc-hint {
   .doc ul.year-list {
     columns: 1;
   }
+}
+
+/* ——— Gamepad debug page ——— */
+
+.pad-debug-meta {
+  margin: 0 0 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--green);
+}
+
+.pad-debug-list {
+  display: grid;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.pad-card.stale {
+  border-color: #8a3030;
+}
+
+.pad-card.stale .pad-card-head h2 {
+  color: #ff8a8a;
+}
+
+.pad-card-head h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  color: var(--accent);
+}
+
+.pad-card-vendor,
+.pad-card-product {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--green);
+  line-height: 1.35;
+}
+
+.pad-card-vendor[hidden],
+.pad-card-product[hidden] {
+  display: none !important;
+}
+
+.pad-card-product {
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.pad-card-id,
+.pad-card-meta {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.pad-card-meta {
+  margin-top: 0.2rem;
+  color: var(--ink-dim);
+}
+
+.pad-axes {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.85rem 0 0.75rem;
+}
+
+.pad-axis {
+  display: grid;
+  grid-template-columns: 1.6rem 1fr 3.4rem;
+  gap: 0.45rem;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+.pad-axis.active {
+  color: var(--green);
+}
+
+.pad-axis-track {
+  position: relative;
+  height: 0.55rem;
+  border-radius: 2px;
+  background: #1a1210;
+  overflow: hidden;
+}
+
+.pad-axis-track::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #3a302c;
+}
+
+.pad-axis-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  background: var(--coral);
+}
+
+.pad-axis.active .pad-axis-fill {
+  background: var(--green);
+}
+
+.pad-axis-v {
+  text-align: right;
+}
+
+.pad-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(3.1rem, 1fr));
+  gap: 0.35rem;
+}
+
+.pad-btn {
+  display: grid;
+  gap: 0.1rem;
+  justify-items: center;
+  padding: 0.35rem 0.2rem;
+  border: 1px solid #2a201c;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--coral-btn) calc(var(--press, 0) * 55%), #140e0c);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--muted);
+}
+
+.pad-btn.on {
+  border-color: #6ecf6a88;
+  color: var(--green-text);
+  background: var(--green);
+  font-weight: 600;
+}
+
+.pad-btn-i {
+  font-size: 0.72rem;
+}
+
+.pad-debug-log {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  display: grid;
+  gap: 0.25rem;
+}
+
+.pad-debug-log li {
+  border-bottom: 1px solid #1a1210;
+  padding: 0.2rem 0;
 }

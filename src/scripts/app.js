@@ -7,13 +7,11 @@
   const DB_VERSION = 1;
 
   const statusEl = document.getElementById('status');
-  const nowPlayingEl = document.getElementById('now-playing');
   const toastEl = document.getElementById('toast');
   const shareInput = document.getElementById('share-input');
   const shareNote = document.getElementById('share-note');
   const machineSelect = document.getElementById('machine-select');
   const snapListEl = document.getElementById('snap-list');
-  const snapEmptyEl = document.getElementById('snap-empty');
   const pauseBtn = document.getElementById('btn-pause');
   const pokePanelEl = document.getElementById('poke-panel');
   const pokeListEl = document.getElementById('poke-list');
@@ -182,15 +180,14 @@
       instantBtn.setAttribute('aria-pressed', state.tapeTraps ? 'true' : 'false');
       instantBtn.textContent = state.tapeTraps ? 'Instant tape load: On' : 'Instant tape load: Off';
     }
-    if (nowPlayingEl) {
-      nowPlayingEl.textContent = state.gameTitle || '';
-    }
     syncShare();
   }
 
   function setPanelsOpen(open) {
     document.body.classList.toggle('panels-open', open);
     history.replaceState(null, '', `#${buildShareHash()}`);
+    if (open) startMemMap();
+    else stopMemMap();
     // Recalc after the CSS transition starts so the canvas tracks CRT size.
     requestAnimationFrame(() => {
       fitCanvas();
@@ -453,6 +450,325 @@
     });
   }
 
+  /* ——— Live memory map (right panel) ——— */
+  const memMapCanvas = document.getElementById('memmap-canvas');
+  const memMapCtx = memMapCanvas?.getContext('2d', { alpha: false });
+  let memMapTimer = null;
+  let memMapBusy = false;
+  let memMapImage = null;
+  let memMapPopup = null;
+  let memMapPopupCanvas = null;
+  let memMapPopupCtx = null;
+  let memMapPopupHint = null;
+  /** @type {Uint8Array | null} */
+  let memMapBytes = null;
+  const memMapView = { zoom: 1, panX: 0, panY: 0 };
+
+  function pageBytes(pages, pageNum) {
+    const raw = pages?.[pageNum] ?? pages?.[String(pageNum)];
+    if (!raw) return null;
+    return raw instanceof Uint8Array ? raw : new Uint8Array(raw);
+  }
+
+  function memMapPopupOpen() {
+    return Boolean(memMapPopup && !memMapPopup.closed && memMapPopupCtx && memMapPopupCanvas);
+  }
+
+  function memMapPanelExpanded() {
+    return document.getElementById('memmap-panel')?.classList.contains('expanded');
+  }
+
+  function memMapShouldRun() {
+    const sideLive =
+      document.body.classList.contains('panels-open') && memMapPanelExpanded();
+    return sideLive || memMapPopupOpen();
+  }
+
+  function formatMemHint(addr, value) {
+    const hexAddr = addr.toString(16).toUpperCase().padStart(4, '0');
+    const hexVal = value.toString(16).toUpperCase().padStart(2, '0');
+    return `addr ${addr} / $${hexAddr} · byte ${value} / $${hexVal}`;
+  }
+
+  function clampMemMapView() {
+    if (!memMapPopupCanvas) return;
+    const cw = memMapPopupCanvas.width;
+    const ch = memMapPopupCanvas.height;
+    const z = memMapView.zoom;
+    const dw = cw * z;
+    const dh = ch * z;
+    if (z <= 1) {
+      memMapView.panX = (cw - dw) / 2;
+      memMapView.panY = (ch - dh) / 2;
+      return;
+    }
+    memMapView.panX = Math.min(0, Math.max(cw - dw, memMapView.panX));
+    memMapView.panY = Math.min(0, Math.max(ch - dh, memMapView.panY));
+  }
+
+  function paintMemMapPopup() {
+    if (!memMapPopupOpen() || !memMapCanvas) return;
+    const cw = memMapPopupCanvas.width;
+    const ch = memMapPopupCanvas.height;
+    clampMemMapView();
+    memMapPopupCtx.imageSmoothingEnabled = false;
+    memMapPopupCtx.fillStyle = '#050805';
+    memMapPopupCtx.fillRect(0, 0, cw, ch);
+    memMapPopupCtx.drawImage(
+      memMapCanvas,
+      memMapView.panX,
+      memMapView.panY,
+      cw * memMapView.zoom,
+      ch * memMapView.zoom
+    );
+  }
+
+  function drawMemMap(snapshot) {
+    if (!memMapCtx || !memMapCanvas) return;
+    const pages = snapshot.memoryPages || {};
+    const model = Number(snapshot.model) || 48;
+    const paging = Number(snapshot.ulaState?.pagingFlags) || 0;
+    const pageC000 = model === 48 ? 0 : paging & 7;
+    const order = [5, 2, pageC000];
+
+    if (!memMapImage || memMapImage.width !== 256 || memMapImage.height !== 192) {
+      memMapImage = memMapCtx.createImageData(256, 192);
+    }
+    if (!memMapBytes || memMapBytes.length !== 256 * 192) {
+      memMapBytes = new Uint8Array(256 * 192);
+    }
+    const data = memMapImage.data;
+    let i = 0;
+    for (const pageNum of order) {
+      const page = pageBytes(pages, pageNum);
+      for (let b = 0; b < 16384; b++, i++) {
+        const v = page ? page[b] & 255 : 0;
+        memMapBytes[i] = v;
+        const pix = i * 4;
+        const addr = 0x4000 + i;
+        let r;
+        let g;
+        let bl;
+        if (addr < 0x5800) {
+          // Display file
+          r = v >> 2;
+          g = 30 + (v >> 1);
+          bl = 70 + (v >> 1);
+        } else if (addr < 0x5b00) {
+          // Attributes — expose ink/paper bits
+          const ink = v & 7;
+          const paper = (v >> 3) & 7;
+          r = 40 + ink * 28 + (v & 0x40 ? 40 : 0);
+          g = 20 + paper * 18;
+          bl = 60 + ink * 20 + paper * 10;
+        } else {
+          // General RAM
+          r = v >> 1;
+          g = 40 + (v >> 1);
+          bl = v >> 3;
+        }
+        data[pix] = r;
+        data[pix + 1] = g;
+        data[pix + 2] = bl;
+        data[pix + 3] = 255;
+      }
+    }
+    memMapCtx.putImageData(memMapImage, 0, 0);
+    paintMemMapPopup();
+  }
+
+  async function updateMemMap() {
+    if (memMapBusy) return;
+    if (!memMapShouldRun()) return;
+    if (!window.__zxwarpWorker) return;
+    memMapBusy = true;
+    try {
+      const snapshot = await requestWorkerSnapshot();
+      drawMemMap(snapshot);
+    } catch {
+      /* emulator not ready / busy */
+    } finally {
+      memMapBusy = false;
+    }
+  }
+
+  function startMemMap() {
+    if (memMapTimer != null) return;
+    updateMemMap();
+    memMapTimer = setInterval(updateMemMap, 200);
+  }
+
+  function stopMemMap() {
+    if (memMapTimer == null) return;
+    clearInterval(memMapTimer);
+    memMapTimer = null;
+  }
+
+  function bindMemMapPopupControls(win, canvas) {
+    const hint = win.document.getElementById('hint');
+    memMapPopupHint = hint;
+    let dragging = false;
+    let lastClientX = 0;
+    let lastClientY = 0;
+
+    function eventToCanvas(e) {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return null;
+      return {
+        cx: ((e.clientX - rect.left) / rect.width) * canvas.width,
+        cy: ((e.clientY - rect.top) / rect.height) * canvas.height,
+        rect,
+      };
+    }
+
+    function mapPosFromEvent(e) {
+      const pt = eventToCanvas(e);
+      if (!pt) return null;
+      const dw = canvas.width * memMapView.zoom;
+      const dh = canvas.height * memMapView.zoom;
+      if (dw <= 0 || dh <= 0) return null;
+      const x = Math.floor(((pt.cx - memMapView.panX) / dw) * 256);
+      const y = Math.floor(((pt.cy - memMapView.panY) / dh) * 192);
+      if (x < 0 || y < 0 || x >= 256 || y >= 192) return null;
+      return { x, y };
+    }
+
+    function updateHint(e) {
+      if (!hint) return;
+      const pos = mapPosFromEvent(e);
+      if (!pos || !memMapBytes) {
+        hint.textContent = 'Scroll to zoom · drag to pan · hover for address / byte';
+        return;
+      }
+      const idx = pos.y * 256 + pos.x;
+      const addr = 0x4000 + idx;
+      const value = memMapBytes[idx] & 255;
+      const z = memMapView.zoom >= 10 ? memMapView.zoom.toFixed(0) : memMapView.zoom.toFixed(1);
+      hint.textContent = `${formatMemHint(addr, value)} · ×${z}`;
+    }
+
+    canvas.addEventListener(
+      'wheel',
+      (e) => {
+        e.preventDefault();
+        const pt = eventToCanvas(e);
+        if (!pt) return;
+        const oldZ = memMapView.zoom;
+        const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+        const newZ = Math.min(32, Math.max(1, oldZ * factor));
+        if (newZ === oldZ) return;
+        memMapView.panX = pt.cx - (pt.cx - memMapView.panX) * (newZ / oldZ);
+        memMapView.panY = pt.cy - (pt.cy - memMapView.panY) * (newZ / oldZ);
+        memMapView.zoom = newZ;
+        clampMemMapView();
+        paintMemMapPopup();
+        updateHint(e);
+      },
+      { passive: false }
+    );
+
+    canvas.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      dragging = true;
+      lastClientX = e.clientX;
+      lastClientY = e.clientY;
+      e.preventDefault();
+    });
+
+    win.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+    });
+
+    win.addEventListener('mousemove', (e) => {
+      if (dragging) {
+        const rect = canvas.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          memMapView.panX += ((e.clientX - lastClientX) / rect.width) * canvas.width;
+          memMapView.panY += ((e.clientY - lastClientY) / rect.height) * canvas.height;
+          lastClientX = e.clientX;
+          lastClientY = e.clientY;
+          clampMemMapView();
+          paintMemMapPopup();
+        }
+      }
+      updateHint(e);
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      if (hint && !dragging) {
+        hint.textContent = 'Scroll to zoom · drag to pan · hover for address / byte';
+      }
+    });
+  }
+
+  function openMemMapWindow() {
+    if (memMapPopupOpen()) {
+      memMapPopup.focus();
+      return;
+    }
+
+    const scale = 4;
+    const cw = 256 * scale;
+    const ch = 192 * scale;
+    const features = `popup=yes,width=${cw + 48},height=${ch + 120},menubar=no,toolbar=no,location=no,status=no`;
+    const win = window.open('', 'zxwarp-memmap', features);
+    if (!win) {
+      toast('Popup blocked — allow popups for this site');
+      return;
+    }
+
+    memMapView.zoom = 1;
+    memMapView.panX = 0;
+    memMapView.panY = 0;
+
+    win.document.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>zxwarp – Memory map</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #050805; color: #9ab090; font: 12px/1.4 "IBM Plex Mono", Consolas, monospace; }
+    body { display: grid; place-items: center; gap: 0.55rem; padding: 0.75rem; box-sizing: border-box; }
+    h1 { margin: 0; font: 600 0.95rem/1 "IBM Plex Sans", sans-serif; color: #6ecf6a; }
+    canvas { width: min(100%, ${cw}px); height: auto; aspect-ratio: 256 / 192; image-rendering: pixelated; image-rendering: crisp-edges; background: #000; border: 1px solid #2a3a28; cursor: crosshair; }
+    .legend { display: flex; gap: 0.75rem; margin: 0; opacity: 0.9; }
+    .legend span::before { content: ""; display: inline-block; width: 0.55rem; height: 0.55rem; margin-right: 0.28rem; border-radius: 2px; vertical-align: -0.05rem; }
+    .s::before { background: #4a8cff; } .a::before { background: #e05ad0; } .r::before { background: #6ecf6a; }
+    #hint { margin: 0; min-height: 1.2em; color: #c8e0c4; letter-spacing: 0.01em; }
+  </style>
+</head>
+<body>
+  <h1>Memory map</h1>
+  <canvas id="map" width="${cw}" height="${ch}"></canvas>
+  <p id="hint">Scroll to zoom · drag to pan · hover for address / byte</p>
+  <p class="legend"><span class="s">screen</span><span class="a">attrs</span><span class="r">RAM</span></p>
+</body>
+</html>`);
+    win.document.close();
+
+    memMapPopup = win;
+    memMapPopupCanvas = win.document.getElementById('map');
+    memMapPopupCtx = memMapPopupCanvas?.getContext('2d', { alpha: false }) || null;
+    if (memMapPopupCtx) memMapPopupCtx.imageSmoothingEnabled = false;
+
+    if (memMapPopupCanvas) bindMemMapPopupControls(win, memMapPopupCanvas);
+
+    win.addEventListener('beforeunload', () => {
+      if (memMapPopup === win) {
+        memMapPopup = null;
+        memMapPopupCanvas = null;
+        memMapPopupCtx = null;
+        memMapPopupHint = null;
+        stopMemMap();
+      }
+    });
+
+    paintMemMapPopup();
+    startMemMap();
+    updateMemMap();
+  }
+
   async function createSnapshot() {
     if (!emu) return;
     try {
@@ -590,8 +906,8 @@
   /* ——— Spectrum key remaps (capture) ——— */
 
   const ZX = {
-    CAPS: { row: 0, mask: 0x01 },
-    SYM: { row: 7, mask: 0x02 },
+    CAPS: { row: 0, mask: 0x01, isCaps: true },
+    SYM: { row: 7, mask: 0x02, isSymbol: true },
     ONE: { row: 3, mask: 0x01 },
     TWO: { row: 3, mask: 0x02 },
     THREE: { row: 3, mask: 0x04 },
@@ -613,9 +929,27 @@
 
   const heldExtra = { alt: false, tab: false, home: false, shift: false };
   const GAMEPAD_STORE_KEY = 'zxwarp-gamepad-map';
-  const GAMEPAD_DEADZONE = 0.45;
+  const GAMEPAD_DEADZONE = 0.35;
+  /** If Gamepad.timestamp hasn't advanced for this long, treat snapshot as frozen. */
+  const GAMEPAD_STALE_MS = 320;
+
+  function loadUsbIds() {
+    return window.ZxUsbIds?.load() || Promise.resolve({ vendors: {} });
+  }
+
+  function describeGamepad(pad) {
+    if (window.ZxUsbIds?.describe) return window.ZxUsbIds.describe(pad);
+    const raw = pad?.id ? String(pad.id).replace(/\s+/g, ' ').trim() : '';
+    const short = raw.replace(/\s*\(.*\)\s*$/, '').trim() || raw || 'Gamepad';
+    return { vendor: '', product: short.slice(0, 48) };
+  }
 
   function emuKey(spec, down) {
+    if (emu && typeof emu.keyDown === 'function' && typeof emu.keyUp === 'function') {
+      if (down) emu.keyDown(spec);
+      else emu.keyUp(spec);
+      return;
+    }
     const worker = window.__zxwarpWorker;
     if (!worker) return;
     worker.postMessage({
@@ -737,27 +1071,112 @@
     return next;
   }
 
-  function updateGamepadStatus(pad) {
-    const el = document.getElementById('gamepad-status');
-    if (!el) return;
+  function updateGamepadStatus(pad, activity = '') {
+    const root = document.getElementById('gamepad-status');
+    const prompt = document.getElementById('gamepad-prompt');
+    const ident = document.getElementById('gamepad-ident');
+    const vendorEl = document.getElementById('gamepad-vendor');
+    const productEl = document.getElementById('gamepad-product');
+    const inputEl = document.getElementById('gamepad-input');
+    if (!root || !prompt || !ident) return;
+
     if (!pad) {
-      el.textContent = 'No gamepad';
-      el.classList.remove('on');
+      prompt.hidden = false;
+      prompt.textContent = navigator.getGamepads
+        ? 'Press a button on your gamepad…'
+        : 'Gamepad API not available';
+      ident.hidden = true;
+      if (vendorEl) vendorEl.textContent = '';
+      if (productEl) productEl.textContent = '';
+      if (inputEl) inputEl.textContent = '';
+      root.classList.remove('on');
       return;
     }
-    const label = pad.id ? pad.id.replace(/\s+/g, ' ').slice(0, 42) : 'Gamepad';
-    el.textContent = `Pad: ${label}`;
-    el.classList.add('on');
+
+    const { vendor, product } = describeGamepad(pad);
+    prompt.hidden = true;
+    ident.hidden = false;
+    if (vendorEl) {
+      vendorEl.textContent = vendor;
+      vendorEl.hidden = !vendor;
+    }
+    if (productEl) productEl.textContent = product;
+    if (inputEl) inputEl.textContent = activity || '';
+    root.classList.add('on');
   }
 
-  function pickGamepad() {
-    if (!navigator.getGamepads) return null;
-    const pads = navigator.getGamepads();
-    for (let i = 0; i < pads.length; i++) {
-      const p = pads[i];
-      if (p && p.connected) return p;
+  function buttonPressed(buttons, index) {
+    const b = buttons[index];
+    if (b == null) return false;
+    if (typeof b === 'number') return b > 0.5;
+    return !!(b.pressed || (typeof b.value === 'number' && b.value > 0.5));
+  }
+
+  /** Age since last HID update (Gamepad.timestamp vs performance.now()). */
+  function padTimestampAgeMs(pad, now = performance.now()) {
+    if (!pad || typeof pad.timestamp !== 'number') return null;
+    return Math.max(0, now - pad.timestamp);
+  }
+
+  function isPadFresh(pad, now = performance.now()) {
+    const age = padTimestampAgeMs(pad, now);
+    if (age == null) return true;
+    // Different time bases / broken values — don't false-trigger stale.
+    if (age > 60000) return true;
+    return age <= GAMEPAD_STALE_MS;
+  }
+
+  function padActivity(pad) {
+    let score = 0;
+    const buttons = pad.buttons || [];
+    for (let i = 0; i < buttons.length; i++) {
+      if (buttonPressed(buttons, i)) score += 1;
     }
-    return null;
+    const axes = pad.axes || [];
+    for (let i = 0; i < axes.length; i++) {
+      if (Math.abs(axes[i]) >= GAMEPAD_DEADZONE) score += 1;
+    }
+    return score;
+  }
+
+  function listConnectedPads() {
+    if (!navigator.getGamepads) return [];
+    const pads = [];
+    const list = navigator.getGamepads();
+    for (let i = 0; i < list.length; i++) {
+      const p = list[i];
+      if (!p) continue;
+      if (p.connected === false) continue;
+      pads.push(p);
+    }
+    return pads;
+  }
+
+  function pickGamepad(preferredIndex = null) {
+    const pads = listConnectedPads();
+    if (!pads.length) return null;
+    const now = performance.now();
+
+    // Never drive keys from a frozen snapshot (PS button often leaves one stuck).
+    const pool = pads.filter((p) => isPadFresh(p, now));
+    if (!pool.length) return null;
+
+    const active = pool
+      .filter((p) => padActivity(p) > 0)
+      .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    if (active.length) {
+      const prefActive = active.find((p) => p.index === preferredIndex);
+      if (prefActive) return prefActive;
+      return active[0];
+    }
+
+    if (preferredIndex != null) {
+      const pref = pool.find((p) => p.index === preferredIndex);
+      if (pref) return pref;
+    }
+
+    pool.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    return pool.find((p) => p.mapping === 'standard') || pool[0];
   }
 
   function axisActive(v) {
@@ -767,26 +1186,35 @@
   function readPadDirections(pad) {
     const buttons = pad.buttons || [];
     const axes = pad.axes || [];
-    let up = !!(buttons[12] && buttons[12].pressed);
-    let down = !!(buttons[13] && buttons[13].pressed);
-    let left = !!(buttons[14] && buttons[14].pressed);
-    let right = !!(buttons[15] && buttons[15].pressed);
-    if (axisActive(axes[0])) {
-      if (axes[0] < 0) left = true;
-      if (axes[0] > 0) right = true;
+    let up = buttonPressed(buttons, 12);
+    let down = buttonPressed(buttons, 13);
+    let left = buttonPressed(buttons, 14);
+    let right = buttonPressed(buttons, 15);
+
+    // Left stick (0/1) and common extras (2/3 or 6/7 on some mappings)
+    const axisPairs = [
+      [0, 1],
+      [2, 3],
+      [6, 7],
+    ];
+    for (const [ax, ay] of axisPairs) {
+      if (ax < axes.length && axisActive(axes[ax])) {
+        if (axes[ax] < 0) left = true;
+        if (axes[ax] > 0) right = true;
+      }
+      if (ay < axes.length && axisActive(axes[ay])) {
+        if (axes[ay] < 0) up = true;
+        if (axes[ay] > 0) down = true;
+      }
     }
-    if (axisActive(axes[1])) {
-      if (axes[1] < 0) up = true;
-      if (axes[1] > 0) down = true;
-    }
-    // Avoid opposite directions cancelling oddly — prefer latest axis if both
+
     if (up && down) {
-      up = axes[1] < 0;
-      down = axes[1] > 0;
+      up = (axes[1] || 0) < 0 || (axes[3] || 0) < 0;
+      down = (axes[1] || 0) > 0 || (axes[3] || 0) > 0;
     }
     if (left && right) {
-      left = axes[0] < 0;
-      right = axes[0] > 0;
+      left = (axes[0] || 0) < 0 || (axes[2] || 0) < 0;
+      right = (axes[0] || 0) > 0 || (axes[2] || 0) > 0;
     }
     return { up, down, left, right };
   }
@@ -830,6 +1258,9 @@
     let heldKeys = new Set();
     let raf = 0;
     let lastPadId = null;
+    let preferredIndex = null;
+    let missFrames = 0;
+    const MISS_BEFORE_CLEAR = 90; // ~1.5s — Chrome often blanks getGamepads() briefly
 
     function keyId(spec) {
       return `${spec.row}:${spec.mask}`;
@@ -865,62 +1296,123 @@
       applyKeySet(new Set());
     }
 
-    function tick() {
-      raf = requestAnimationFrame(tick);
-      if (paused || document.hidden) {
-        if (heldKeys.size) releaseAll();
-        return;
-      }
-
-      const pad = pickGamepad();
-      if (!pad) {
-        if (lastPadId) {
-          releaseAll();
-          lastPadId = null;
-          updateGamepadStatus(null);
-        }
-        return;
-      }
-
-      if (pad.id !== lastPadId) {
+    function notePad(pad) {
+      if (!pad) return;
+      preferredIndex = typeof pad.index === 'number' ? pad.index : preferredIndex;
+      const id = pad.id || `index-${preferredIndex}`;
+      if (id !== lastPadId) {
         if (lastPadId) releaseAll();
-        lastPadId = pad.id;
+        lastPadId = id;
         updateGamepadStatus(pad);
       }
+      missFrames = 0;
+    }
 
-      const mode = gamepadMapMode();
-      const map = gamepadActionMap(mode);
-      const dir = readPadDirections(pad);
-      const buttons = pad.buttons || [];
-      const fire = !!(buttons[0] && buttons[0].pressed) || !!(buttons[7] && buttons[7].pressed); // Cross / R2
-      const enter = !!(buttons[1] && buttons[1].pressed); // Circle
+    function tick() {
+      raf = requestAnimationFrame(tick);
+      try {
+        if (document.hidden) {
+          if (heldKeys.size) releaseAll();
+          return;
+        }
+        if (paused) {
+          if (heldKeys.size) releaseAll();
+        }
 
-      const desired = new Set();
-      const add = (keys, on) => {
-        if (!on) return;
-        for (const k of keys) desired.add(keyId(k));
-      };
-      add(map.up, dir.up);
-      add(map.down, dir.down);
-      add(map.left, dir.left);
-      add(map.right, dir.right);
-      add(map.fire, fire);
-      add(map.enter, enter);
-      applyKeySet(desired);
+        const connected = listConnectedPads();
+
+        const pad = pickGamepad(preferredIndex);
+        if (!pad) {
+          if (heldKeys.size) releaseAll();
+          missFrames += 1;
+          if (connected.length) {
+            // Still listed, but every snapshot is frozen — don't keep holding keys.
+            const stuck = connected.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))[0];
+            updateGamepadStatus(stuck, 'stale — press a face button');
+            lastPadId = stuck.id || `index-${stuck.index}`;
+            missFrames = 0;
+            return;
+          }
+          if (lastPadId && missFrames >= MISS_BEFORE_CLEAR) {
+            lastPadId = null;
+            preferredIndex = null;
+            missFrames = 0;
+            updateGamepadStatus(null);
+          }
+          return;
+        }
+
+        // Follow whichever pad is producing fresh input.
+        if (typeof pad.index === 'number') preferredIndex = pad.index;
+        notePad(pad);
+        if (paused) return;
+
+        const mode = gamepadMapMode();
+        const map = gamepadActionMap(mode);
+        const dir = readPadDirections(pad);
+        const buttons = pad.buttons || [];
+        const fire =
+          buttonPressed(buttons, 0) ||
+          buttonPressed(buttons, 7) ||
+          buttonPressed(buttons, 2); // Cross / R2 / Square
+        const enter = buttonPressed(buttons, 1) || buttonPressed(buttons, 3); // Circle / Triangle
+
+        const desired = new Set();
+        const add = (keys, on) => {
+          if (!on) return;
+          for (const k of keys) desired.add(keyId(k));
+        };
+        add(map.up, dir.up);
+        add(map.down, dir.down);
+        add(map.left, dir.left);
+        add(map.right, dir.right);
+        add(map.fire, fire);
+        add(map.enter, enter);
+        applyKeySet(desired);
+
+        const bits = [];
+        if (dir.up) bits.push('↑');
+        if (dir.down) bits.push('↓');
+        if (dir.left) bits.push('←');
+        if (dir.right) bits.push('→');
+        if (fire) bits.push('○');
+        if (enter) bits.push('↵');
+        updateGamepadStatus(pad, bits.join(''));
+      } catch (err) {
+        console.warn('gamepad tick', err);
+      }
     }
 
     window.addEventListener('gamepadconnected', (e) => {
-      updateGamepadStatus(e.gamepad);
+      notePad(e.gamepad);
       toast('Gamepad connected');
     });
-    window.addEventListener('gamepaddisconnected', () => {
+    window.addEventListener('gamepaddisconnected', (e) => {
+      if (e.gamepad && preferredIndex === e.gamepad.index) preferredIndex = null;
       releaseAll();
       lastPadId = null;
-      updateGamepadStatus(pickGamepad());
+      missFrames = 0;
+      const next = pickGamepad(preferredIndex);
+      if (next) notePad(next);
+      else updateGamepadStatus(null);
       toast('Gamepad disconnected');
     });
 
+    window.addEventListener('focus', () => {
+      const pad = pickGamepad(preferredIndex);
+      if (pad) notePad(pad);
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) return;
+      const pad = pickGamepad(preferredIndex);
+      if (pad) notePad(pad);
+    });
+
     updateGamepadStatus(pickGamepad());
+    loadUsbIds().then(() => {
+      // Re-resolve vendor/product names once the linux-usb.org database is ready.
+      updateGamepadStatus(pickGamepad(preferredIndex));
+    });
     raf = requestAnimationFrame(tick);
     window.addEventListener('beforeunload', () => cancelAnimationFrame(raf));
   }
@@ -955,8 +1447,6 @@
     if (!snapListEl) return;
     const rows = await listSnapshots(gameKey());
     snapListEl.innerHTML = '';
-    if (snapEmptyEl) snapEmptyEl.hidden = rows.length > 0;
-
     for (const row of rows) {
       const li = document.createElement('li');
       const when = new Date(row.createdAt).toLocaleString();
@@ -1197,11 +1687,39 @@
     if (!quiet) toast(`Applied ${n} poke${n === 1 ? '' : 's'}`);
   }
 
+  function updatePokeToggleLabel() {
+    const label = document.querySelector('.poke-toggle-label');
+    if (!label) return;
+    const expanded = pokePanelEl?.classList.contains('expanded');
+    if (!pokeMatch) {
+      label.textContent = 'Pokes';
+      return;
+    }
+    const n = pokeMatch.trainers.length;
+    if (expanded) {
+      label.textContent = 'Pokes';
+      return;
+    }
+    label.textContent = n === 0 ? 'Pokes (none)' : `Pokes (${n})`;
+  }
+
+  function setPokeExpanded(open) {
+    const body = document.getElementById('poke-body');
+    const toggle = document.getElementById('btn-poke-toggle');
+    const apply = document.getElementById('btn-poke-apply');
+    if (body) body.hidden = !open;
+    if (apply) apply.hidden = !open;
+    if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    pokePanelEl?.classList.toggle('expanded', open);
+    updatePokeToggleLabel();
+  }
+
   function renderPokePanel() {
     if (!pokePanelEl || !pokeListEl) return;
 
     if (!state.gameTitle && !state.gameSlug && !state.openUrl) {
       pokePanelEl.hidden = true;
+      setPokeExpanded(false);
       return;
     }
 
@@ -1211,6 +1729,7 @@
       pokeListEl.innerHTML = '';
       if (pokeMatchEl) pokeMatchEl.textContent = 'Looking up Tipshop pokes…';
       if (pokeEmptyEl) pokeEmptyEl.hidden = true;
+      updatePokeToggleLabel();
       return;
     }
 
@@ -1222,6 +1741,7 @@
         : `Matched: ${pokeMatch.title}`;
     }
     if (pokeEmptyEl) pokeEmptyEl.hidden = pokeMatch.trainers.length > 0;
+    updatePokeToggleLabel();
 
     pokeListEl.innerHTML = '';
     pokeMatch.trainers.forEach((trainer, index) => {
@@ -1261,6 +1781,7 @@
     await ensurePokeCatalog();
     pokeUndo = {};
     pokeMatch = null;
+    setPokeExpanded(false);
 
     if (!pokeCatalog) {
       if (pokePanelEl) pokePanelEl.hidden = true;
@@ -1343,6 +1864,49 @@
     document.getElementById('btn-restart')?.addEventListener('click', () => restart());
     document.getElementById('btn-reset')?.addEventListener('click', () => powerReset());
     document.getElementById('btn-snap-create')?.addEventListener('click', () => createSnapshot());
+    document.getElementById('btn-memmap-popout')?.addEventListener('click', () => openMemMapWindow());
+    document.getElementById('btn-poke-toggle')?.addEventListener('click', () => {
+      const open = document.getElementById('btn-poke-toggle')?.getAttribute('aria-expanded') !== 'true';
+      setPokeExpanded(open);
+    });
+    document.getElementById('btn-gamepad-toggle')?.addEventListener('click', () => {
+      const panel = document.getElementById('gamepad-panel');
+      const body = document.getElementById('gamepad-body');
+      const toggle = document.getElementById('btn-gamepad-toggle');
+      const open = toggle?.getAttribute('aria-expanded') !== 'true';
+      if (body) body.hidden = !open;
+      if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      panel?.classList.toggle('expanded', open);
+    });
+    document.getElementById('btn-shortcuts-toggle')?.addEventListener('click', () => {
+      const panel = document.getElementById('shortcuts-panel');
+      const body = document.getElementById('shortcuts-body');
+      const toggle = document.getElementById('btn-shortcuts-toggle');
+      const open = toggle?.getAttribute('aria-expanded') !== 'true';
+      if (body) body.hidden = !open;
+      if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      panel?.classList.toggle('expanded', open);
+    });
+    document.getElementById('btn-snap-toggle')?.addEventListener('click', () => {
+      const panel = document.getElementById('snap-panel');
+      const body = document.getElementById('snap-body');
+      const toggle = document.getElementById('btn-snap-toggle');
+      const open = toggle?.getAttribute('aria-expanded') !== 'true';
+      if (body) body.hidden = !open;
+      if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      panel?.classList.toggle('expanded', open);
+    });
+    document.getElementById('btn-memmap-toggle')?.addEventListener('click', () => {
+      const panel = document.getElementById('memmap-panel');
+      const body = document.getElementById('memmap-body');
+      const toggle = document.getElementById('btn-memmap-toggle');
+      const open = toggle?.getAttribute('aria-expanded') !== 'true';
+      if (body) body.hidden = !open;
+      if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      panel?.classList.toggle('expanded', open);
+      if (open) startMemMap();
+      else stopMemMap();
+    });
     bindPokeUi();
 
     document.getElementById('btn-autoload')?.addEventListener('click', () => {
@@ -1538,12 +2102,16 @@
     if (state.openUrl) opts.openUrl = state.openUrl;
 
     emu = JSSpeccy(container, opts);
+    if (typeof emu.getWorker === 'function') {
+      window.__zxwarpWorker = emu.getWorker();
+    }
     watchCanvasSize();
 
     const ready = () => {
       fitCanvas();
       setStatus('');
       syncChrome();
+      if (document.body.classList.contains('panels-open')) startMemMap();
     };
     if (typeof emu.onReady === 'function') emu.onReady(ready);
     else ready();

@@ -35,6 +35,7 @@
       <a href="./" aria-current="page">Run</a>
       <a href="./games.html">Games</a>
       <a href="./about.html">About</a>
+      <a href="./gamepad-debug.html">Pad</a>
     </nav>
   </header>
 
@@ -73,46 +74,100 @@
         >Instant tape load: On</button>
       </div>
 
-      <label class="field">
-        <span class="field-label">Gamepad</span>
-        <select id="gamepad-map" title="How a USB DualShock 4 / standard gamepad maps to Spectrum controls">
-          <option value="cursor">Cursor keys + 0</option>
-          <option value="sinclair">Sinclair (6–0)</option>
-          <option value="qaop">QAOP + Space</option>
-        </select>
-      </label>
-      <p class="gamepad-status" id="gamepad-status">No gamepad</p>
-
-      <p class="now-playing" id="now-playing"></p>
       <p class="status" id="status" aria-live="polite"></p>
+
+      <section class="gamepad-panel expanded" id="gamepad-panel">
+        <div class="poke-head">
+          <h2>
+            <button
+              type="button"
+              id="btn-gamepad-toggle"
+              class="poke-toggle"
+              aria-expanded="true"
+              aria-controls="gamepad-body"
+            >
+              <span class="poke-chevron" aria-hidden="true"></span>
+              Gamepad
+            </button>
+          </h2>
+        </div>
+        <div class="gamepad-body" id="gamepad-body">
+          <label class="field">
+            <select id="gamepad-map" aria-label="Gamepad mapping" title="How a USB DualShock 4 / standard gamepad maps to Spectrum controls">
+              <option value="cursor">Cursor keys + 0</option>
+              <option value="sinclair">Sinclair (6–0)</option>
+              <option value="qaop">QAOP + Space</option>
+            </select>
+          </label>
+          <p class="gamepad-status" id="gamepad-status" aria-live="polite">
+            <span class="gamepad-prompt" id="gamepad-prompt">Press a button on your gamepad…</span>
+            <span class="gamepad-ident" id="gamepad-ident" hidden>
+              <span class="gamepad-vendor" id="gamepad-vendor"></span>
+              <span class="gamepad-product" id="gamepad-product"></span>
+              <span class="gamepad-input" id="gamepad-input"></span>
+            </span>
+          </p>
+        </div>
+      </section>
 
       <section class="poke-panel" id="poke-panel" hidden>
         <div class="poke-head">
-          <h2>Pokes</h2>
-          <button type="button" id="btn-poke-apply" class="poke-apply" title="Re-apply enabled pokes (use after the game has loaded)">Apply</button>
+          <h2>
+            <button
+              type="button"
+              id="btn-poke-toggle"
+              class="poke-toggle"
+              aria-expanded="false"
+              aria-controls="poke-body"
+            >
+              <span class="poke-chevron" aria-hidden="true"></span>
+              <span class="poke-toggle-label">Pokes</span>
+            </button>
+          </h2>
+          <button type="button" id="btn-poke-apply" class="poke-apply" hidden title="Re-apply enabled pokes (use after the game has loaded)">Apply</button>
         </div>
-        <p class="poke-match" id="poke-match"></p>
-        <ul class="poke-list" id="poke-list"></ul>
-        <p class="poke-empty" id="poke-empty" hidden>No Tipshop pokes matched this game.</p>
-        <p class="poke-note">From <a href="https://github.com/ladyeklipse/all-tipshop-pokes" target="_blank" rel="noopener">Tipshop</a>. Enable after the game is running. Choices are saved in this browser.</p>
+        <div class="poke-body" id="poke-body" hidden>
+          <p class="poke-match" id="poke-match"></p>
+          <ul class="poke-list" id="poke-list"></ul>
+          <p class="poke-empty" id="poke-empty" hidden>No Tipshop pokes matched this game.</p>
+          <p class="poke-note">From <a href="https://github.com/ladyeklipse/all-tipshop-pokes" target="_blank" rel="noopener">Tipshop</a>. Enable after the game is running.</p>
+        </div>
       </section>
 
-      <dl class="keys">
-        <div><dt>Esc / click</dt><dd>Menu panels</dd></div>
-        <div><dt>Shift</dt><dd>Caps Shift</dd></div>
-        <div><dt>Alt</dt><dd>Symbol Shift</dd></div>
-        <div><dt>Tab</dt><dd>Extended mode</dd></div>
-        <div><dt>Home</dt><dd>Edit</dd></div>
-        <div><dt>Pad</dt><dd>USB gamepad (PS4)</dd></div>
-        <div><dt>Del</dt><dd>Restart game</dd></div>
-        <div><dt>F1</dt><dd>About</dd></div>
-        <div><dt>F2</dt><dd>Remember state</dd></div>
-        <div><dt>F3</dt><dd>Recall state</dd></div>
-        <div><dt>Pause</dt><dd>Pause</dd></div>
-        <div><dt>Insert</dt><dd>Games…</dd></div>
-        <div><dt>Ctrl O</dt><dd>Open (when paused)</dd></div>
-        <div><dt>Ctrl S</dt><dd>Remember state (when paused)</dd></div>
-      </dl>
+      <section class="shortcuts-panel expanded" id="shortcuts-panel">
+        <div class="poke-head">
+          <h2>
+            <button
+              type="button"
+              id="btn-shortcuts-toggle"
+              class="poke-toggle"
+              aria-expanded="true"
+              aria-controls="shortcuts-body"
+            >
+              <span class="poke-chevron" aria-hidden="true"></span>
+              Shortcuts
+            </button>
+          </h2>
+        </div>
+        <div class="shortcuts-body" id="shortcuts-body">
+          <dl class="keys">
+            <div><dt>Esc / click</dt><dd>Menu panels</dd></div>
+            <div><dt>Shift</dt><dd>Caps Shift</dd></div>
+            <div><dt>Alt</dt><dd>Symbol Shift</dd></div>
+            <div><dt>Tab</dt><dd>Extended mode</dd></div>
+            <div><dt>Home</dt><dd>Edit</dd></div>
+            <div><dt>Pad</dt><dd>USB gamepad (PS4)</dd></div>
+            <div><dt>Del</dt><dd>Restart game</dd></div>
+            <div><dt>F1</dt><dd>About</dd></div>
+            <div><dt>F2</dt><dd>Remember state</dd></div>
+            <div><dt>F3</dt><dd>Recall state</dd></div>
+            <div><dt>Pause</dt><dd>Pause</dd></div>
+            <div><dt>Insert</dt><dd>Games…</dd></div>
+            <div><dt>Ctrl O</dt><dd>Open (when paused)</dd></div>
+            <div><dt>Ctrl S</dt><dd>Remember state (when paused)</dd></div>
+          </dl>
+        </div>
+      </section>
 
       <div class="btn-row">
         <button type="button" id="btn-share">Share link…</button>
@@ -138,15 +193,64 @@
     </main>
 
     <aside class="side side-right" id="side-right" aria-label="Snapshots">
-      <h2>Snapshots</h2>
-      <button type="button" id="btn-snap-create" class="create">Create</button>
-      <ul class="snap-list" id="snap-list"></ul>
-      <p class="snap-empty" id="snap-empty">No snapshots yet for this game.</p>
-      <p class="snap-note">Saved in this browser (IndexedDB). Slots are per game.</p>
+      <section class="snap-panel expanded" id="snap-panel">
+        <div class="poke-head">
+          <h2>
+            <button
+              type="button"
+              id="btn-snap-toggle"
+              class="poke-toggle"
+              aria-expanded="true"
+              aria-controls="snap-body"
+            >
+              <span class="poke-chevron" aria-hidden="true"></span>
+              Snapshots
+            </button>
+          </h2>
+        </div>
+        <div class="snap-body" id="snap-body">
+          <div class="btn-row">
+            <button type="button" id="btn-snap-create">Create</button>
+          </div>
+          <ul class="snap-list" id="snap-list"></ul>
+        </div>
+      </section>
+
+      <section class="memmap" id="memmap-panel" aria-label="Memory map">
+        <div class="poke-head">
+          <h2>
+            <button
+              type="button"
+              id="btn-memmap-toggle"
+              class="poke-toggle"
+              aria-expanded="false"
+              aria-controls="memmap-body"
+            >
+              <span class="poke-chevron" aria-hidden="true"></span>
+              Memory map
+            </button>
+          </h2>
+          <button
+            type="button"
+            id="btn-memmap-popout"
+            class="memmap-popout"
+            title="Open a larger live memory map in a new window"
+          >Pop out</button>
+        </div>
+        <div class="memmap-body" id="memmap-body" hidden>
+          <canvas id="memmap-canvas" width="256" height="192"></canvas>
+          <p class="memmap-legend">
+            <span class="mm-screen">screen</span>
+            <span class="mm-attr">attrs</span>
+            <span class="mm-ram">RAM</span>
+          </p>
+        </div>
+      </section>
     </aside>
   </div>
 
   <div class="toast" id="toast" role="status"></div>
+  <script src="./assets/usb-ids.js"></script>
   <script src="./assets/app.js"></script>
 </body>
 </html>

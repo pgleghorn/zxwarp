@@ -18,10 +18,11 @@ Open http://localhost:4173/
 
 | Script | Purpose |
 |--------|---------|
-| `npm run build` | Fetch games + pokes, then write static site to `dist/` |
+| `npm run build` | Fetch games + pokes + USB IDs, then write static site to `dist/` |
 | `npm run serve` | Serve `dist/` (correct `application/wasm` MIME) |
 | `npm run fetch-games` | Fetch World of Spectrum Top 100 into `games/top100/` (also run by `build`) |
 | `npm run fetch-pokes` | Build `games/pokes.json` from Tipshop (also run by `build`) |
+| `npm run fetch-usb-ids` | Build `data/usb-ids.json` from [linux-usb.org](http://www.linux-usb.org/usb.ids) (also run by `build`) |
 | `npm run fetch-jsspeccy` | Re-download + patch JSSpeccy into `vendor/` |
 
 Requires Node.js 18+.
