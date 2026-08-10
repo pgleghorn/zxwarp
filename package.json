@@ -1,6 +1,6 @@
 {
   "name": "zxwarp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "ZX Spectrum web UI powered by JSSpeccy 3 and inspired by Qaop/JS",
   "private": true,
   "type": "module",
