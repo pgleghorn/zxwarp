@@ -16,6 +16,8 @@ import { execFileSync } from 'node:child_process';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const dist = join(root, 'dist');
+const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+const VERSION = pkg.version || '0.0.0';
 const vendorJs = join(root, 'vendor', 'jsspeccy', 'jsspeccy.js');
 const gamesDir = join(root, 'games');
 const catalogPath = join(gamesDir, 'catalog.json');
@@ -160,7 +162,8 @@ function renderGamesPage(catalog) {
 
 function copyTemplate(name, vars = {}) {
   let html = readFileSync(join(root, 'src', 'templates', name), 'utf8');
-  for (const [key, value] of Object.entries(vars)) {
+  const allVars = { VERSION, ...vars };
+  for (const [key, value] of Object.entries(allVars)) {
     html = html.replaceAll(`{{${key}}}`, value);
   }
   writeFileSync(join(dist, name), html);

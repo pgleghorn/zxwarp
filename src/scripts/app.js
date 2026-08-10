@@ -218,6 +218,23 @@
   }
 
   function fitCanvas() {
+    const stage = document.querySelector('.screen-stage');
+    const crt = document.getElementById('crt');
+    if (stage && crt) {
+      const sw = stage.clientWidth;
+      const sh = stage.clientHeight;
+      if (sw > 0 && sh > 0) {
+        let w = sw;
+        let h = (sw * 3) / 4;
+        if (h > sh) {
+          h = sh;
+          w = (sh * 4) / 3;
+        }
+        crt.style.width = `${Math.floor(w)}px`;
+        crt.style.height = `${Math.floor(h)}px`;
+      }
+    }
+
     const root = document.getElementById('jsspeccy');
     if (!root) return;
     root.style.setProperty('width', '100%', 'important');
@@ -252,6 +269,10 @@
     const mo = new MutationObserver(() => fitCanvas());
     mo.observe(host, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'width', 'height'] });
     window.addEventListener('resize', fitCanvas);
+    const stage = document.querySelector('.screen-stage');
+    if (stage && typeof ResizeObserver === 'function') {
+      new ResizeObserver(() => fitCanvas()).observe(stage);
+    }
     fitCanvas();
   }
 

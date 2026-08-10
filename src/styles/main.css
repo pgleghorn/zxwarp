@@ -46,10 +46,26 @@ body.play {
   height: 100vh;
   overflow: hidden;
   background: #000;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Same topbar as Games/About — only while control panels are open */
+body.play > .topbar {
+  display: none;
+  flex: 0 0 auto;
+  border-bottom-color: #1a1a1a;
+}
+
+body.play.panels-open > .topbar {
+  display: flex;
 }
 
 .play-layout {
-  height: 100vh;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  width: 100%;
   display: grid;
   grid-template-columns: 0 minmax(0, 1fr) 0;
   transition: grid-template-columns 0.22s ease;
@@ -389,33 +405,35 @@ body.panels-open .side {
   word-break: break-all;
 }
 
+.play-layout > * {
+  min-width: 0;
+  min-height: 0;
+}
+
 .screen-stage {
   position: relative;
   display: grid;
   place-items: center;
   min-width: 0;
-  height: 100vh;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
   background: #000;
   padding: 0;
   overflow: hidden;
+  /* Size the CRT from this box (not the viewport), so topbar/side panels are respected */
+  container-type: size;
 }
 
-/* Screen fills the viewport when panels are closed; shrinks for sidebars when open */
+/* Largest 4:3 rectangle that fits the play stage */
 .crt {
   cursor: pointer;
-  --crt-max-h: 100vh;
-  --crt-max-w: 100vw;
   position: relative;
-  width: min(var(--crt-max-w), calc(var(--crt-max-h) * 4 / 3));
-  height: min(var(--crt-max-h), calc(var(--crt-max-w) * 3 / 4));
+  width: min(100cqw, calc(100cqh * 4 / 3));
+  height: min(100cqh, calc(100cqw * 3 / 4));
   overflow: hidden;
   background: #000;
   transition: width 0.22s ease, height 0.22s ease;
-}
-
-body.panels-open .crt {
-  --crt-max-h: calc(100vh - 1.5rem);
-  --crt-max-w: calc(100vw - (2 * var(--side-w)) - 1.5rem);
 }
 
 #jsspeccy {
@@ -639,6 +657,11 @@ body.panels-open .esc-hint {
     pointer-events: auto;
   }
 
+  body.play.panels-open .side-right {
+    /* Sit below the shared topbar */
+    top: 3.25rem;
+  }
+
   body.panels-open .screen-stage {
     padding-right: min(72vw, 220px);
   }
@@ -682,6 +705,15 @@ body.panels-open .esc-hint {
 .topbar .brand .tag {
   color: #888;
   font-size: 0.85rem;
+}
+
+.topbar .brand .tag.version {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: #777;
+  align-self: center;
 }
 
 .nav {

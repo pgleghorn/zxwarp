@@ -1,6 +1,6 @@
 # zxwarp
 
-A ZX Spectrum web emulator using Matt Wescott's superb [JSSpeccy 3](https://github.com/gasman/jsspeccy3) engine, with a UI look & feel heavily based on Jan Bobrowski’s excellent [Qaop/JS](https://torinak.com/qaop/about), please show your support for that at [https://torinak.com/qaop/donate](https://torinak.com/qaop/donate)
+A ZX Spectrum web emulator using Matt Wescott's superb [JSSpeccy 3](https://github.com/gasman/jsspeccy3) engine, with a UI look & feel inspired by Jan Bobrowski’s excellent [Qaop/JS](https://torinak.com/qaop/about), please show your support for that at [https://torinak.com/qaop/donate](https://torinak.com/qaop/donate)
 
 zxwarp adds:
 
