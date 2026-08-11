@@ -7,3 +7,4 @@ tmp/
 # Game tape/snapshot archives (fetch with npm run fetch-games)
 games/**/*.zip
 games/library/
+games/catalog.json
