@@ -958,6 +958,23 @@ body.panels-open .esc-hint {
   max-width: 52ch;
 }
 
+.games-sources {
+  margin: -0.75rem 0 1.5rem;
+  padding-left: 1.25rem;
+  max-width: 60ch;
+  color: #9a978c;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.games-sources a {
+  color: var(--accent);
+}
+
+.games-sources li + li {
+  margin-top: 0.35rem;
+}
+
 .doc h2 {
   margin: 1.75rem 0 0.75rem;
   font-size: 1.1rem;

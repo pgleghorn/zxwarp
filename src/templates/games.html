@@ -27,15 +27,35 @@
   <main class="doc games-page">
     <h1>ZX Spectrum games</h1>
     <p class="lead">
-      Visitor-voted <a href="https://worldofspectrum.net/archive/best-games/" target="_blank" rel="noopener">World of Spectrum Top 100</a>.
-      Click a title to play. Browse by rank or jump to a year.
+      This library is compiled from three
+      <a href="https://worldofspectrum.net/" target="_blank" rel="noopener">World of Spectrum</a>
+      archive charts, merged and de-duplicated:
+    </p>
+    <ul class="games-sources">
+      <li>
+        <a href="https://worldofspectrum.net/archive/top-100/" target="_blank" rel="noopener">Official Game Top 100 Of All Time</a>
+        — Your Sinclair’s Stuart Campbell list and the YS Readers Top 100
+      </li>
+      <li>
+        <a href="https://worldofspectrum.net/archive/best-games/" target="_blank" rel="noopener">Visitor Voted Top 100 Best Games</a>
+      </li>
+      <li>
+        <a href="https://worldofspectrum.net/archive/best-adventures/" target="_blank" rel="noopener">Visitor Voted Top 100 Best Text Adventures</a>
+      </li>
+    </ul>
+    <p class="lead">
+      Metadata comes from
+      <a href="https://api.zxinfo.dk/v3/" target="_blank" rel="noopener">ZXInfo</a>;
+      playable files from
+      <a href="https://worldofspectrum.net/" target="_blank" rel="noopener">World of Spectrum</a>.
+      Click a title to play. Browse by list order or jump to a year.
     </p>
 
     <nav class="year-nav" aria-label="Jump to year">
 {{YEAR_NAV}}
     </nav>
 
-    <h2 id="top100">Top 100</h2>
+    <h2 id="library">Library</h2>
     <ol class="games rank-list">
 {{RANK_LIST}}
     </ol>
@@ -43,7 +63,13 @@
 {{YEAR_SECTIONS}}
 
     <p class="footnote">
-      Sources mirrored from World of Spectrum / Spectrum Computing where available.
+      Metadata via <a href="https://api.zxinfo.dk/v3/" target="_blank" rel="noopener">ZXInfo</a>
+      (Thomas Kolbeck) /
+      <a href="https://github.com/zxdb/ZXDB" target="_blank" rel="noopener">ZXDB</a>
+      (Einar Saukas);
+      files mirrored from
+      <a href="https://worldofspectrum.net/" target="_blank" rel="noopener">World of Spectrum</a>
+      / Spectrum Computing where available.
       Original rights remain with their owners. Missing files are still listed with a WoS link.
     </p>
   </main>

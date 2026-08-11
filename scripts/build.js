@@ -46,7 +46,7 @@ function ensureSupportingData() {
   // Always refresh catalog / pokes / usb ids so `npm run build` is enough for a full site.
   // Game zip downloads are cached; missing archives are fetched.
   console.log('Fetching games…');
-  runScript('fetch-top-games.js');
+  runScript('fetch-games-zxinfo.js');
   console.log('Fetching pokes…');
   runScript('fetch-pokes.js');
   console.log('Fetching USB IDs…');
@@ -81,11 +81,11 @@ function listLooseGames(catalogSlugs) {
 
   function walk(dir) {
     for (const entry of readdirSync(dir)) {
-      if (entry.startsWith('.') || entry === 'catalog.json' || entry === 'README.md') continue;
+      if (entry.startsWith('.') || entry === 'catalog.json' || entry === 'README.md' || entry === 'games.json' || entry === 'pokes.json') continue;
       const full = join(dir, entry);
       const st = statSync(full);
       if (st.isDirectory()) {
-        if (entry === 'top50' || entry === 'top100') continue; // covered by catalog
+        if (entry === 'library') continue; // covered by catalog
         walk(full);
         continue;
       }
@@ -124,7 +124,7 @@ function renderGamesPage(catalog) {
   });
 
   const yearNav = [
-    '<a href="#top100">Top 100</a>',
+    '<a href="#library">Library</a>',
     ...years.map((y) => `<a href="#y${y}">${escapeHtml(String(y))}</a>`),
   ].join('\n');
 
@@ -250,7 +250,7 @@ function main() {
 
   const totalFiles = page.count + loose.length;
   console.log(
-    `Built dist/ (${page.count} top-100 files, ${loose.length} other local, ${totalFiles} playable)`
+    `Built dist/ (${page.count} library files, ${loose.length} other local, ${totalFiles} playable)`
   );
 }
 

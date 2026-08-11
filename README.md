@@ -21,7 +21,8 @@ Open http://localhost:4173/
 |--------|---------|
 | `npm run build` | Fetch games + pokes + USB IDs, then write static site to `dist/` |
 | `npm run serve` | Serve `dist/` (correct `application/wasm` MIME) |
-| `npm run fetch-games` | Fetch World of Spectrum Top 100 into `games/top100/` (also run by `build`) |
+| `npm run fetch-games` | Fetch `games/games.json` via [ZXInfo API](https://api.zxinfo.dk/v3/) into `games/library/` (skipped if `catalog.json` exists; also run by `build`) |
+| `npm run fetch-games-catalog` | Refresh `games/catalog.json` from ZXInfo only (no downloads) |
 | `npm run fetch-pokes` | Build `games/pokes.json` from Tipshop (also run by `build`) |
 | `npm run fetch-usb-ids` | Build `data/usb-ids.json` from [linux-usb.org](http://www.linux-usb.org/usb.ids) (also run by `build`) |
 | `npm run fetch-jsspeccy` | Re-download + patch JSSpeccy into `vendor/` |
@@ -53,8 +54,8 @@ The bare root page opens the control panels. Game links launch **fullscreen**. P
 ### URL hash parameters
 
 ```text
-/#48&g=bomb-jack&l=games/top100/009-bomb-jack.tap.zip
-/#48&panels&g=bomb-jack&l=games/top100/009-bomb-jack.tap.zip
+/#48&g=bomb-jack&l=games/library/0000617-bomb-jack.tap.zip
+/#48&panels&g=bomb-jack&l=games/library/0000617-bomb-jack.tap.zip
 /#128&usr0&l=https://example.com/demo.tap
 /#!autoload&pentagon
 ```
@@ -74,15 +75,16 @@ See `dist/about.html` after build for the full reference.
 
 ## Games library
 
-Visitor-voted **Top 100** from [World of Spectrum – Best Games](https://worldofspectrum.net/archive/best-games/).
+Curated titles from `games/games.json`, resolved through the [ZXInfo API v3](https://api.zxinfo.dk/v3/) and downloaded from [World of Spectrum](https://worldofspectrum.net/).
 
-- Metadata: `games/catalog.json` (committed)
-- Archives: `games/top100/*.zip` — **gitignored**; fetched by `npm run build`
+- List: `games/games.json` (committed)
+- Metadata: `games/catalog.json` (written by fetch)
+- Archives: `games/library/*.zip` — **gitignored**; fetched by `npm run build`
 - Browse/play: `/games.html` (by rank and by year)
 
-Some titles have no public WoS download; they stay listed with a World of Spectrum link.
+Some titles have no public download; they stay listed with a World of Spectrum / ZXInfo link.
 
-Drop extra `.tap` / `.tzx` / `.z80` / `.sna` / `.szx` / `.zip` under `games/` (outside `top100/`) and rebuild — they appear under “Other local files”.
+Drop extra `.tap` / `.tzx` / `.z80` / `.sna` / `.szx` / `.zip` under `games/` (outside `library/`) and rebuild — they appear under “Other local files”.
 
 ## Pokes
 
@@ -91,3 +93,11 @@ Tipshop trainers from [all-tipshop-pokes](https://github.com/ladyeklipse/all-tip
 ## Licence
 
 GPL-3.0-or-later (required by JSSpeccy 3). Spectrum ROMs © Amstrad PLC; redistributed with permission as part of JSSpeccy. Game tape images remain © their publishers — fetch them for personal/offline use; do not commit redistributable archives you are not allowed to publish. See `games/README.md`.
+
+## Credits
+
+- Emulation: [JSSpeccy 3](https://github.com/gasman/jsspeccy3) by Matt Westcott
+- UI inspiration: [Qaop/JS](https://torinak.com/qaop/about) by Jan Bobrowski ([donate](https://torinak.com/qaop/donate))
+- Pokes: [Your Sinclair Tipshop](https://www.the-tipshop.co.uk/) via [all-tipshop-pokes](https://github.com/ladyeklipse/all-tipshop-pokes)
+- Game metadata: [ZXInfo API](https://api.zxinfo.dk/v3/) ([zxinfo.dk](https://zxinfo.dk)) by Thomas Kolbeck, on [ZXDB](https://github.com/zxdb/ZXDB) by Einar Saukas
+- Files / charts: [World of Spectrum Classic](https://worldofspectrum.net/) / [Spectrum Computing](https://spectrumcomputing.co.uk/)
